@@ -316,6 +316,90 @@ class LoaderMod(loader.Module):
             False,
         )
 
+    @staticmethod
+    def _parse_tg_message_link(
+        url: str,
+    ) -> typing.Optional[typing.Tuple[typing.Union[str, int], int]]:
+        parsed = urlparse(url)
+        if parsed.netloc.lower() not in {
+            "t.me",
+            "telegram.me",
+            "www.t.me",
+            "www.telegram.me",
+        }:
+            return None
+
+        parts = [part for part in parsed.path.split("/") if part]
+        if not parts:
+            return None
+
+        if parts[0] == "s":
+            parts = parts[1:]
+
+        if len(parts) < 2:
+            return None
+
+        if parts[0] == "c" and len(parts) >= 3 and parts[1].isdigit():
+            if not parts[-1].isdigit():
+                return None
+
+            return int(f"-100{parts[1]}"), int(parts[-1])
+
+        if not parts[-1].isdigit():
+            return None
+
+        return parts[0].lstrip("@"), int(parts[-1])
+
+    async def _fetch_tg_module(
+        self, url: str
+    ) -> typing.Optional[typing.Tuple[str, str]]:
+        if not (target := self._parse_tg_message_link(url)):
+            return None
+
+        peer, message_id = target
+        messages = await self._client.get_messages(peer, ids=[message_id])
+        if not messages:
+            raise FileNotFoundError(url)
+
+        msg = messages[0]
+        source = None
+        module_name = None
+
+        if getattr(msg, "file", None):
+            source_bytes = await msg.download_media(bytes)
+            if not isinstance(source_bytes, (bytes, bytearray)):
+                raise ValueError("Telegram message does not contain a text module")
+
+            try:
+                source = source_bytes.decode("utf-8-sig")
+            except UnicodeDecodeError:
+                raise ValueError("Telegram module must be utf-8 encoded")
+
+            file_name = getattr(msg.file, "name", None)
+            if isinstance(file_name, str) and file_name.endswith(".py"):
+                module_name = file_name.rsplit("/", maxsplit=1)[-1].rsplit(".", 1)[0]
+
+        if not source:
+            source = (getattr(msg, "raw_text", None) or getattr(msg, "message", "") or "").strip()
+
+        if not source:
+            raise ValueError("Telegram message is empty")
+
+        if not module_name:
+            module_name = (
+                next(
+                    (
+                        line.split("class ", maxsplit=1)[1].split("(", maxsplit=1)[0].strip()
+                        for line in source.splitlines()
+                        if line.strip().startswith("class ")
+                    ),
+                    None,
+                )
+                or f"telegram_{message_id}"
+            )
+
+        return source, module_name
+
     async def download_and_install(
         self,
         module_name: str,
@@ -325,8 +409,11 @@ class LoaderMod(loader.Module):
         try:
             blob_link = False
             module_name = module_name.strip()
+            tg_module = None
+
             if urlparse(module_name).netloc:
                 url = module_name
+                tg_module = await self._fetch_tg_module(url)
                 if re.match(
                     r"^(https:\/\/github\.com\/.*?\/.*?\/blob\/.*\.py)|"
                     r"(https:\/\/gitlab\.com\/.*?\/.*?\/-\/blob\/.*\.py)$",
@@ -346,16 +433,21 @@ class LoaderMod(loader.Module):
             if message:
                 message = await utils.answer(
                     message,
-                    self.strings("installing").format(module_name),
+                    self.strings("installing").format(
+                        tg_module[1] if tg_module else module_name
+                    ),
                 )
 
-            try:
-                r = await self._storage.fetch(url, auth=self.config["basic_auth"])
-            except requests.exceptions.HTTPError:
-                if message is not None:
-                    await utils.answer(message, self.strings("no_module"))
+            if tg_module:
+                r, module_name = tg_module
+            else:
+                try:
+                    r = await self._storage.fetch(url, auth=self.config["basic_auth"])
+                except requests.exceptions.HTTPError:
+                    if message is not None:
+                        await utils.answer(message, self.strings("no_module"))
 
-                return MODULE_LOADING_FAILED
+                    return MODULE_LOADING_FAILED
 
             await self.load_module(
                 r,
