@@ -7,8 +7,8 @@
 # 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
 # ©️ Codrago, 2024-2030
-# This file is a part of Heroku Userbot
-# 🌐 https://github.com/coddrago/Heroku
+# This file is a part of ratko userbot
+# 🌐 https://github.com/unsidogandon/ratko
 # You can redistribute it and/or modify it under the terms of the GNU AGPLv3
 # 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
@@ -506,7 +506,7 @@ def raise_auth():
     raise InteractiveAuthRequired()
 
 
-class Heroku:
+class ratko:
     """Main userbot instance, which can handle multiple clients"""
 
     def __init__(self):
@@ -684,7 +684,7 @@ class Heroku:
             and not existing
         ):
             while bot := input(
-                "You can enter a custom bot username or leave it empty and Heroku will generate a random one: "
+                "You can enter a custom bot username or leave it empty and ratko will generate a random one: "
             ):
                 bot = bot.strip()
                 bot = bot.lstrip("@")
@@ -763,7 +763,7 @@ class Heroku:
         await db.init()
 
         while bot := input(
-            "You can enter a custom bot username or leave it empty and Heroku will generate a random one: "
+            "You can enter a custom bot username or leave it empty and ratko will generate a random one: "
         ):
             try:
                 if await self._check_bot(client, bot):
@@ -1043,14 +1043,11 @@ class Heroku:
             pref = client.heroku_db.get("heroku.main", "command_prefix", None)
 
             logo = (
-                "                          _           \n"
-                r"  /\  /\ ___  _ __  ___  | | __ _   _ "
-                "\n"
-                r" / /_/ // _ \| '__|/ _ \ | |/ /| | | |"
-                "\n"
-                "/ __  /|  __/| |  | (_) ||   < | |_| |\n"
-                r"\/ /_/  \___||_|   \___/ |_|\_\ \__,_|"
-                "\n\n"
+                "RRRR    AAA   TTTTT K   K  OOO\n"
+                "R   R  A   A    T   K  K  O   O\n"
+                "RRRR   AAAAA    T   KKK   O   O\n"
+                "R  R   A   A    T   K  K  O   O\n"
+                "R   R  A   A    T   K   K  OOO\n\n"
                 f"• Build: {build[:7]}\n"
                 f"• Version: {'.'.join(list(map(str, list(__version__))))}\n"
                 f"• {upd}\n"
@@ -1061,7 +1058,7 @@ class Heroku:
                 if self.web and hasattr(self.web, "url"):
                     web_url = f"🔗 Web url: {self.web.url}"
                     logging.debug(
-                        "\n🪐 Heroku %s #%s (%s) started\n%s",
+                        "\n🪐 ratko %s #%s (%s) started\n%s",
                         ".".join(list(map(str, list(__version__)))),
                         build[:7],
                         upd,
@@ -1084,13 +1081,13 @@ class Heroku:
                     "https://raw.githubusercontent.com/coddrago/assets/refs/heads/main/heroku/heroku_started.png",
                     caption=(
                         "{} <b>{} started!</b>\n\n<tg-emoji emoji-id=5231065262228250587>⚙</tg-emoji> <b>GitHub commit SHA: <a"
-                        ' href="https://github.com/ewik3984747/ratko/commit/{}">{}</a></b>\n<tg-emoji emoji-id=5873225338984599714>🔎</tg-emoji>'
+                        ' href="https://github.com/unsidogandon/ratko/commit/{}">{}</a></b>\n<tg-emoji emoji-id=5873225338984599714>🔎</tg-emoji>'
                         " <b>Update status: {}</b>\n<b>{}</b>\n<tg-emoji emoji-id=5870903672937911120>🕶</tg-emoji> <b>Prefix:</b> <code>{}</code>"
                     ).format(
                         (
                             utils.get_platform_emoji()
                             if client.heroku_me.premium is True
-                            else "🪐 Heroku"
+                            else "🪐 ratko"
                         ),
                         ".".join(list(map(str, list(__version__)))),
                         build,
@@ -1265,4 +1262,4 @@ class Heroku:
 
 herokutl.extensions.html.CUSTOM_EMOJIS = not get_config_key("disable_custom_emojis")
 
-heroku = Heroku()
+heroku = ratko()
