@@ -1,6 +1,6 @@
 <div align="center">
   <img src="https://github.com/hikariatama/assets/raw/master/1326-command-window-line-flat.webp" height="80">
-  <h1>Heroku Userbot</h1>
+  <h1>Ratko Userbot</h1>
   <p>Advanced Telegram userbot with enhanced security and modern features</p>
   
   <p>
@@ -67,7 +67,7 @@
 
   ```bash
   sudo apt update && sudo apt install git python3 -y && \
-  git clone https://github.com/coddrago/Heroku && \
+  git clone https://github.com/unsidogandon/ratko && \
   cd Heroku && \
   python3 -m venv .venv && \
   source .venv/bin/activate && \
@@ -81,7 +81,7 @@
   
   ```bash
   sudo dnf update -y && sudo dnf install git python3 -y && \
-  git clone https://github.com/coddrago/Heroku && \
+  git clone https://github.com/unsidogandon/ratko && \
   cd Heroku && \
   python3 -m venv .venv && \
   source .venv/bin/activate && \
@@ -95,7 +95,7 @@
   
 ```bash
 sudo pacman -Syu --noconfirm && sudo pacman -S git python --noconfirm --needed && \
-git clone https://github.com/coddrago/Heroku && \
+git clone https://github.com/unsidogandon/ratko && \
 cd Heroku && \
 python3 -m venv .venv && \
 source .venv/bin/activate && \
@@ -129,7 +129,7 @@ python3 -m heroku
   
   4. **Enter this command(RMB):**
   ```bash
-  clear && git clone https://github.com/coddrago/Heroku && cd Heroku && python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt && python3 -m heroku
+  clear && git clone https://github.com/unsidogandon/ratko && cd Heroku && python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt && python3 -m heroku
   ```
   > **🔗How to get API_ID and API_HASH?:** [Video](https://youtu.be/DcqDA249Lhg?t=24)
   
@@ -144,7 +144,7 @@ python3 -m heroku
   4. <b>After successful installation, a terminal will open in front of you, write there:</b>
     
   ```bash
-  sudo apt update && sudo apt upgrade -y && sudo apt install python3 git python3-pip -y && git clone https://github.com/coddrago/Heroku && cd Heroku && python3 -m venv .venv && source .venv/bin/activate && sudo pip install -r requirements.txt && python3 -m heroku
+  sudo apt update && sudo apt upgrade -y && sudo apt install python3 git python3-pip -y && git clone https://github.com/unsidogandon/ratko && cd Heroku && python3 -m venv .venv && source .venv/bin/activate && sudo pip install -r requirements.txt && python3 -m heroku
   ```
 
 5. <b>At the end of the installation, a link will appear, follow it and enter your account details to log in.</b>
