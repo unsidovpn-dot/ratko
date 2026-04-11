@@ -48,7 +48,7 @@ RUN rm -rf /var/lib/apt/lists/ /var/cache/apt/archives/ /tmp/*
 WORKDIR /data
 RUN mkdir /data/private
 
-RUN git clone https://github.com/coddrago/Heroku /data/Heroku
+RUN git clone https://github.com/unsidogandon/ratko /data/ratko
 WORKDIR /data/Heroku
 RUN git fetch && git checkout master && git pull
 
