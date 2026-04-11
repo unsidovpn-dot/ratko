@@ -17,11 +17,33 @@ from .. import version
 
 parser = herokutl.utils.sanitize_parse_mode("html")
 logger = logging.getLogger(__name__)
-REPO_URL = "https://github.com/ewik3984747/ratko"
+DEFAULT_REPO_URL = "https://github.com/unsidogandon/ratko"
 
 
 def _is_no_git() -> bool:
     return os.environ.get("HEROKU_NO_GIT") == "1"
+
+
+def _get_repo_url() -> str:
+    if _is_no_git():
+        return DEFAULT_REPO_URL
+
+    try:
+        url = git.Repo().remote("origin").url.strip()
+    except Exception:
+        return DEFAULT_REPO_URL
+
+    if url.startswith("git@github.com:"):
+        url = f"https://github.com/{url.removeprefix('git@github.com:')}"
+    elif url.startswith("ssh://git@github.com/"):
+        url = f"https://github.com/{url.removeprefix('ssh://git@github.com/')}"
+    elif url.startswith("http://github.com/"):
+        url = f"https://github.com/{url.removeprefix('http://github.com/')}"
+
+    if url.endswith(".git"):
+        url = url[:-4]
+
+    return url or DEFAULT_REPO_URL
 
 
 # GeekTG Compatibility
@@ -33,9 +55,10 @@ def get_git_info() -> typing.Tuple[str, str]:
     if _is_no_git():
         return ("", "")
     hash_ = get_git_hash()
+    repo_url = _get_repo_url()
     return (
         hash_,
-        f"{REPO_URL}/commit/{hash_}" if hash_ else "",
+        f"{repo_url}/commit/{hash_}" if hash_ else "",
     )
 
 
@@ -63,7 +86,7 @@ def get_commit_url() -> str:
         hash_ = get_git_hash()
         if not hash_:
             return "Unknown"
-        return f'<a href="{REPO_URL}/commit/{hash_}">#{hash_[:7]}</a>'
+        return f'<a href="{_get_repo_url()}/commit/{hash_}">#{hash_[:7]}</a>'
     except Exception:
         return "Unknown"
 
