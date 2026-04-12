@@ -580,6 +580,10 @@ class UpdaterMod(loader.Module):
 
             self.set("do_not_create", True)
 
+        if not self.inline.init_complete or not self.inline.bot:
+            logger.info("Inline bot is not ready, skipping updater startup banner")
+            return
+
         if not self.config["autoupdate"] and not self.get("autoupdate", False):
             await self.inline.bot.send_photo(
                 self.tg_id,

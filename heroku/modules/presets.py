@@ -123,6 +123,10 @@ class Presets(loader.Module):
         if self.get("sent"):
             return
 
+        if not self.inline.init_complete or not self.inline.bot:
+            logger.info("Inline bot is not ready, skipping presets onboarding")
+            return
+
         self.set("sent", True)
         await self._menu()
 

@@ -11,6 +11,7 @@
 # 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
 import asyncio
+import contextlib
 import logging
 import os
 import random
@@ -31,6 +32,110 @@ logger = logging.getLogger(__name__)
 
 
 class TokenObtainment(InlineUnit):
+    @staticmethod
+    def _get_bot_headers() -> dict:
+        hdrs = inutils.headers.copy()
+        hdrs.update(
+            {
+                "x-aj-referer": "https://webappinternal.telegram.org/botfather",
+                "x-requested-with": "XMLHttpRequest",
+            }
+        )
+        return hdrs
+
+    @staticmethod
+    def _find_bot_id(content: str, username: str = "") -> typing.Optional[str]:
+        if username:
+            username = username.strip("@")
+            match = re.search(
+                rf'href="/botfather/bot/(\d+)".*?@{re.escape(username)}(?:<|\s)',
+                content,
+                flags=re.DOTALL,
+            )
+            return match.group(1) if match else None
+
+        match = re.search(
+            r'href="/botfather/bot/(\d+)".*?@(\w+_[0-9A-Za-z]{6}_bot)(?:<|\s)',
+            content,
+            flags=re.DOTALL,
+        )
+        return match.group(1) if match else None
+
+    async def _get_bot_token(
+        self: "InlineManager",
+        session: aiohttp.ClientSession,
+        url: str,
+        bot_id: typing.Union[str, int],
+        headers: dict,
+        retries: int = 8,
+    ) -> typing.Optional[str]:
+        for _ in range(retries):
+            async with session.get(url + f"/bot/{bot_id}", headers=headers) as resp:
+                if resp.status == 200:
+                    with contextlib.suppress(Exception):
+                        text = (await resp.json())["h"]
+                        token = re.search(r"(\d+:[A-Za-z0-9\-_]{35})", text)
+                        if token:
+                            return token.group(1)
+
+            await asyncio.sleep(1.5)
+
+        return None
+
+    async def _save_bot_token(
+        self: "InlineManager",
+        session: aiohttp.ClientSession,
+        url: str,
+        _hash: str,
+        bot_id: typing.Union[str, int],
+        token: str,
+        headers: dict,
+    ) -> bool:
+        self._db.set("heroku.inline", "bot_token", token)
+        self._token = token
+        self.bot_id = bot_id
+
+        for method, value in {
+            "settings[inline]": "true",
+            "settings[inph]": "user@heroku:~$",
+            "settings[infdb]": "1",
+        }.items():
+            await fw_protect()
+
+            async with session.post(
+                url + f"/api?hash={_hash}",
+                data={method: value, "bid": bot_id, "method": "changeSettings"},
+                headers=inutils.headers,
+            ) as resp:
+                if resp.status != 200:
+                    logger.error(
+                        "Error while changing bot inline settings: resp%s\nbody: %s",
+                        resp.status,
+                        await resp.text(),
+                    )
+                    return False
+
+        commands = {
+            "start": "Welcome message",
+            "profile": "Get main information about bot",
+        }
+
+        def get_cmds(x) -> dict[str, str]:
+            return dict(inutils.BOT_COMMANDS_PATTERN.findall(x))
+
+        async with session.get(
+            url + f"/bot/{bot_id}/commands", headers=headers
+        ) as resp:
+            if resp.status != 200:
+                logger.warning("Unable to get bot commands list")
+            else:
+                _cmds = get_cmds((await resp.json())["h"])
+                has_commands = any(cmd in commands for cmd in _cmds)
+                if not has_commands:
+                    await self._set_commands(session, url, _hash, commands)
+
+        return True
+
     async def _create_bot(
         self: "InlineManager", session: aiohttp.ClientSession, url: str, _hash: str
     ):
@@ -96,7 +201,7 @@ class TokenObtainment(InlineUnit):
                     raise RuntimeError("Upload failed")
                 content = await resp.json()
                 photo_id = content["media"]["photo_id"]
-        except (RuntimeError, KeyError):
+        except (RuntimeError, KeyError, OSError):
             photo_id = ""
 
         data = {
@@ -142,9 +247,30 @@ class TokenObtainment(InlineUnit):
                     data,
                 )
                 return False
-            # bot_id = content["bot_id"]
+        bot_id = content.get("bot_id")
+        if bot_id:
+            headers = self._get_bot_headers()
+            token = await self._get_bot_token(session, url, bot_id, headers)
+            if token:
+                return await self._save_bot_token(
+                    session,
+                    url,
+                    _hash,
+                    bot_id,
+                    token,
+                    headers,
+                )
 
-        return await self._assert_token(session, url, _hash, create_new_if_needed=False)
+        for _ in range(8):
+            if await self._assert_token(
+                session, url, _hash, create_new_if_needed=False
+            ):
+                return True
+
+            await asyncio.sleep(1.5)
+
+        logger.error("Bot was created, but token could not be obtained")
+        return False
 
     async def _assert_token(
         self: "InlineManager",
@@ -165,27 +291,11 @@ class TokenObtainment(InlineUnit):
                 return False
             content = await resp.text()
 
-        ids = None
-        bot_id = None
-
         username = self._db.get("heroku.inline", "custom_bot", False)
-        if username:
-            ids = re.search(inutils.BOT_ID_PATTERN.format(username.strip("@")), content)
-
-        else:
-            ids = inutils.BOT_BASE_PATTERN.search(content)
-
-        if ids:
-            bot_id = ids.group(1)
+        bot_id = self._find_bot_id(content, username or "")
 
         if bot_id:
-            hdrs = inutils.headers.copy()
-            hdrs.update(
-                {
-                    "x-aj-referer": "https://webappinternal.telegram.org/botfather",
-                    "x-requested-with": "XMLHttpRequest",
-                }
-            )
+            hdrs = self._get_bot_headers()
             if revoke_token:
                 async with session.post(
                     url + f"/api?hash={_hash}",
@@ -198,67 +308,19 @@ class TokenObtainment(InlineUnit):
 
                     token = (await resp.json())["token"]
             else:
-                async with session.get(url + f"/bot/{bot_id}", headers=hdrs) as resp:
-                    if resp.status != 200:
-                        logger.error("Error while getting token: resp%s", resp.status)
-                        return False
+                token = await self._get_bot_token(session, url, bot_id, hdrs, retries=1)
+                if not token:
+                    logger.error("Error while getting token for bot %s", bot_id)
+                    return False
 
-                    text = (await resp.json())["h"]
-                    token = re.search(r"(\d+:[A-Za-z0-9\-_]{35})", text)
-                    token = token.group(1)
-
-            self._db.set("heroku.inline", "bot_token", token)
-            self._token = token
-
-            for method, value in {
-                "settings[inline]": "true",
-                "settings[inph]": "user@heroku:~$",
-                "settings[infdb]": "1",
-            }.items():
-                await fw_protect()
-
-                async with session.post(
-                    url + f"/api?hash={_hash}",
-                    data={method: value, "bid": bot_id, "method": "changeSettings"},
-                    headers=inutils.headers,
-                ) as resp:
-                    if resp.status != 200:
-                        logger.error(
-                            "Error while changing bot inline settings: resp%s\nbody: %s",
-                            resp.status,
-                            await resp.text(),
-                        )
-                        return False
-
-            self.bot_id = bot_id
-
-            commands = {
-                "start": "Welcome message",
-                "profile": "Get main information about bot",
-            }
-
-            def get_cmds(x) -> dict[str, str]:
-                return dict(inutils.BOT_COMMANDS_PATTERN.findall(x))
-
-            async with session.get(
-                url + f"/bot/{bot_id}/commands", headers=hdrs
-            ) as resp:
-                if resp.status != 200:
-                    logger.warning("Unable to get bot commands list")
-
-                else:
-                    _cmds = get_cmds((await resp.json())["h"])
-                    has_commands = False
-
-                    for cmd in _cmds:
-                        if cmd in commands:
-                            has_commands = True
-                            break
-
-                    if not has_commands:
-                        await self._set_commands(session, url, _hash, commands)
-
-            return True
+            return await self._save_bot_token(
+                session,
+                url,
+                _hash,
+                bot_id,
+                token,
+                hdrs,
+            )
 
         return (
             await self._create_bot(session, url, _hash)

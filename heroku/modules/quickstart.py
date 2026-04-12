@@ -27,14 +27,14 @@ class Quickstart(loader.Module):
     strings = {"name": "Quickstart"}
 
     async def client_ready(self):
-        self.text = (
-            lambda: self.strings("base").format(
+        self.text = lambda: (
+            self.strings("base").format(
                 utils.get_platform_emoji()
                 if self.client.heroku_me.premium is True
                 else "Heroku"
             )
             + (
-                "\n" + ((self.strings("lavhost") if "LAVHOST" in os.environ else ""))
+                "\n" + (self.strings("lavhost") if "LAVHOST" in os.environ else "")
             ).rstrip()
         )
 
@@ -133,7 +133,8 @@ class Quickstart(loader.Module):
                 except Exception:
                     logger.exception(f"Failed to create/verify topic '{topic_title}'")
 
-            await utils.invite_inline_bot(self.client, content_channel)
+            if self.inline.init_complete and self.inline.bot:
+                await utils.invite_inline_bot(self.client, content_channel)
 
         except Exception:
             logger.exception(
@@ -144,27 +145,34 @@ class Quickstart(loader.Module):
                 "You can try solving this by leaving some channels/groups"
             )
 
+        if not self.inline.init_complete or not self.inline.bot:
+            logger.info("Inline bot is not ready, skipping quickstart inline prompts")
+            return
+
         await self.request_join(
             "heroku_talks",
             "Heroku help is only available in this chat. By agreeing to join the chat, you agree to the Heroku federation rules and if you violate them, you will be permanently banned.",
         )
 
-        self.mark = lambda: [
+        self.mark = lambda: (
             [
-                {
-                    "text": self.strings("btn_support"),
-                    "url": "https://t.me/heroku_talks",
-                }
-            ],
-        ] + utils.chunks(
-            [
-                {
-                    "text": self.strings.get("language", lang),
-                    "data": f"heroku/lang/{lang}",
-                }
-                for lang in translations.SUPPORTED_LANGUAGES
-            ],
-            3,
+                [
+                    {
+                        "text": self.strings("btn_support"),
+                        "url": "https://t.me/heroku_talks",
+                    }
+                ],
+            ]
+            + utils.chunks(
+                [
+                    {
+                        "text": self.strings.get("language", lang),
+                        "data": f"heroku/lang/{lang}",
+                    }
+                    for lang in translations.SUPPORTED_LANGUAGES
+                ],
+                3,
+            )
         )
 
         if self.get("no_msg"):

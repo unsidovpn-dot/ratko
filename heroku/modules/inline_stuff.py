@@ -10,9 +10,10 @@
 # You can redistribute it and/or modify it under the terms of the GNU AGPLv3
 # 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
+import random
 import re
 import string
-import random
+import asyncio
 
 from herokutl.errors.rpcerrorlist import YouBlockedUserError
 from herokutl.tl.functions.contacts import UnblockRequest
@@ -27,6 +28,10 @@ class InlineStuff(loader.Module):
     """Provides support for inline stuff"""
 
     strings = {"name": "InlineStuff"}
+
+    def _reinit_inline(self):
+        if not self.inline.init_complete or not self.inline.bot:
+            asyncio.ensure_future(self.inline.register_manager())
 
     @loader.watcher(
         "out",
@@ -102,6 +107,7 @@ class InlineStuff(loader.Module):
 
         self._db.set("heroku.inline", "custom_bot", args)
         self._db.set("heroku.inline", "bot_token", None)
+        self._reinit_inline()
         await utils.answer(message, self.strings("bot_updated"))
 
     @loader.command()
@@ -111,6 +117,7 @@ class InlineStuff(loader.Module):
             await utils.answer(message, self.strings("token_invalid"))
             return
         self._db.set("heroku.inline", "bot_token", args)
+        self._reinit_inline()
         await utils.answer(message, self.strings("bot_updated"))
 
     async def aiogram_watcher(self, message: BotInlineMessage):

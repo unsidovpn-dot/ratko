@@ -40,7 +40,9 @@ class RatkoBackupMod(loader.Module):
     strings = {"name": "RatkoBackup"}
 
     async def client_ready(self):
-        if not self.get("period"):
+        self._content_channel_id = await utils.wait_for_content_channel(self._db)
+
+        if not self.get("period") and self.inline.init_complete and self.inline.bot:
             await self.inline.bot.send_photo(
                 self.tg_id,
                 photo="https://raw.githubusercontent.com/unsidogandon/ratko/main/banner.jpg",
@@ -68,8 +70,6 @@ class RatkoBackupMod(loader.Module):
                     ]
                 ),
             )
-
-        self._content_channel_id = await utils.wait_for_content_channel(self._db)
 
     async def _get_reqs(self) -> bytes:
 
