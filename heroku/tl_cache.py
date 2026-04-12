@@ -234,6 +234,32 @@ class CustomTelegramClient(TelegramClient):
     def forbidden_constructors(self) -> typing.List[str]:
         return self._forbidden_constructors
 
+    def _exteragram_transform(self, value: typing.Any) -> typing.Any:
+        from . import utils
+
+        if isinstance(value, str):
+            return utils.replace_tg_emoji_tags(value, self)
+
+        if isinstance(value, list):
+            return [self._exteragram_transform(item) for item in value]
+
+        if isinstance(value, tuple):
+            return tuple(self._exteragram_transform(item) for item in value)
+
+        return value
+
+    def _exteragram_transform_kwargs(
+        self,
+        kwargs: dict,
+        *keys: str,
+    ) -> dict:
+        kwargs = dict(kwargs)
+        for key in keys:
+            if key in kwargs:
+                kwargs[key] = self._exteragram_transform(kwargs[key])
+
+        return kwargs
+
     async def force_get_entity(self, *args, **kwargs):
         """Forcefully makes a request to Telegram to get the entity."""
 
@@ -399,9 +425,9 @@ class CustomTelegramClient(TelegramClient):
                 resolved_perms,
                 exp,
             )
-            self._heroku_perms_cache.setdefault(hashable_entity, {})[
-                hashable_user
-            ] = cache_record
+            self._heroku_perms_cache.setdefault(hashable_entity, {})[hashable_user] = (
+                cache_record
+            )
             logger.debug("Saved hashable_entity %s perms to cache", hashable_entity)
 
             def save_user(key: typing.Union[str, int]):
@@ -413,9 +439,9 @@ class CustomTelegramClient(TelegramClient):
                     self._heroku_perms_cache.setdefault(key, {})[
                         f"@{user.username}"
                     ] = cache_record
-                    self._heroku_perms_cache.setdefault(key, {})[
-                        user.username
-                    ] = cache_record
+                    self._heroku_perms_cache.setdefault(key, {})[user.username] = (
+                        cache_record
+                    )
 
             if getattr(entity, "id", None):
                 logger.debug("Saved resolved_entity id %s perms to cache", entity.id)
@@ -617,6 +643,7 @@ class CustomTelegramClient(TelegramClient):
             return await self._topic_guesser(native_method, stack, *args, **kwargs)
 
     async def send_file(self, *args, **kwargs) -> Message:
+        kwargs = self._exteragram_transform_kwargs(kwargs, "caption")
         return await self._topic_guesser(
             super().send_file,
             inspect.stack(),
@@ -625,12 +652,30 @@ class CustomTelegramClient(TelegramClient):
         )
 
     async def send_message(self, *args, **kwargs) -> Message:
+        args = list(args)
+        if len(args) > 1:
+            args[1] = self._exteragram_transform(args[1])
+
+        kwargs = self._exteragram_transform_kwargs(kwargs, "message", "caption")
         return await self._topic_guesser(
             super().send_message,
             inspect.stack(),
             *args,
             **kwargs,
         )
+
+    async def edit_message(self, *args, **kwargs) -> Message:
+        args = list(args)
+        if len(args) > 2:
+            args[2] = self._exteragram_transform(args[2])
+        elif len(args) > 1:
+            args[1] = self._exteragram_transform(args[1])
+
+        kwargs = self._exteragram_transform_kwargs(kwargs, "text", "message", "caption")
+        return await super().edit_message(*args, **kwargs)
+
+    async def send_photo(self, *args, **kwargs) -> Message:
+        return await self.send_file(*args, **kwargs)
 
     async def _call(
         self,
