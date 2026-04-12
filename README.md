@@ -1,7 +1,7 @@
 <div align="center">
   <img src="https://github.com/hikariatama/assets/raw/master/1326-command-window-line-flat.webp" height="80">
   <h1>Ratko Userbot</h1>
-  <p>Advanced Telegram userbot with enhanced security and modern features</p>
+  <p>Advanced ratko userbot with enhanced security and modern features</p>
   
   <p>
     <a href="https://www.codacy.com/gh/coddrago/Heroku/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=coddrago/Heroku&amp;utm_campaign=Badge_Grade">
