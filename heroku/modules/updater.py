@@ -353,7 +353,7 @@ class UpdaterMod(loader.Module):
             self.strings("restarting_caption").format(
                 utils.get_platform_emoji()
                 if self._client.heroku_me.premium
-                else "Heroku"
+                else "ratko"
             ),
         )
 
@@ -510,7 +510,7 @@ class UpdaterMod(loader.Module):
                     self.strings("restarting_caption").format(
                         utils.get_platform_emoji()
                         if self._client.heroku_me.premium
-                        else "Heroku"
+                        else "ratko"
                     ),
                 )
                 await self.process_restart_message(msg_obj)
