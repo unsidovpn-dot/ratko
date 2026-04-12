@@ -110,7 +110,7 @@ class CoreMod(loader.Module):
                 (
                     utils.get_platform_emoji()
                     if self._client.heroku_me.premium and CUSTOM_EMOJIS
-                    else "🪐 <b>ratko userbot</b>"
+                    else "☃️ <b>ratko userbot</b>"
                 ),
                 *version.__version__,
                 utils.get_commit_url(),

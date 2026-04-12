@@ -298,7 +298,7 @@ settings:
   alias_removed: "<tg-emoji emoji-id=5197474765387864959>👍</tg-emoji> <b>Алиас</b> <code>{}</code> <b>минус</b>."
   no_alias: "<tg-emoji emoji-id=5210952531676504517>🚫</tg-emoji> <b>Нет такого алиаса</b> <code>{}</code>"
   db_cleared: "<tg-emoji emoji-id=5197474765387864959>👍</tg-emoji> <b>Базу вайпнул (очистил)</b>"
-  ratko: "{} <b>{}.{}.{}</b> <i>{}</i>\n\n<tg-emoji emoji-id=5228879218363872764>⌨</tg-emoji> <b>Кодеры: <a href=\"https://t.me/h_ae_256\">@h_ae_256</a>, <a href=\"https://t.me/kot_ewik\">@kot_ewik</a></b>"
+  ratko: "{} <b>{}.{}.{}</b> <i>{}</i>\n\n<tg-emoji emoji-id=5310296284874159738>⚪️</tg-emoji> <b>Кодеры: <a href=\"https://t.me/h_ae_256\">@h_ae_256</a>, <a href=\"https://t.me/kot_ewik\">@kot_ewik</a></b>"
   _cls_doc: "Базовые настройки"
   confirm_cleardb: "⚠️ <b>Ты реально хочешь вайпнуть базу данных? Все слетит!</b>"
   cleardb_confirm: "🗑 Вайпнуть базу"
