@@ -132,6 +132,43 @@ class CommandDispatcher:
 
         self.raw_handlers = []
 
+    @staticmethod
+    def _patch_message_emoji_methods(message: Message) -> Message:
+        if not isinstance(message, Message) or getattr(
+            message, "_ratko_exteragram_wrapped", False
+        ):
+            return message
+
+        def _transform(value: typing.Any) -> typing.Any:
+            return (
+                utils.replace_tg_emoji_tags(value, message)
+                if isinstance(value, str)
+                else value
+            )
+
+        def _wrap(method):
+            async def wrapped(*args, **kwargs):
+                if args:
+                    args = (_transform(args[0]), *args[1:])
+
+                for key in ("text", "message", "caption"):
+                    if key in kwargs and isinstance(kwargs[key], str):
+                        kwargs[key] = _transform(kwargs[key])
+
+                return await method(*args, **kwargs)
+
+            return wrapped
+
+        with contextlib.suppress(Exception):
+            message.edit = _wrap(message.edit)
+        with contextlib.suppress(Exception):
+            message.respond = _wrap(message.respond)
+        with contextlib.suppress(Exception):
+            message.reply = _wrap(message.reply)
+
+        message._ratko_exteragram_wrapped = True
+        return message
+
     async def _handle_ratelimit(self, message: Message, func: callable) -> bool:
         if await self.security.check(message, security.OWNER):
             return True
@@ -420,6 +457,8 @@ class CommandDispatcher:
         if self._db.get(main.__name__, "grep", False) and not watcher:
             message = self._handle_grep(message)
 
+        message = self._patch_message_emoji_methods(message)
+
         return message, prefix, txt, func
 
     async def handle_raw(self, event: events.Raw):
@@ -534,10 +573,12 @@ class CommandDispatcher:
             "in": lambda: not getattr(m, "out", True),
             "only_messages": lambda: isinstance(m, Message),
             "editable": (
-                lambda: not getattr(m, "out", False)
-                and not getattr(m, "fwd_from", False)
-                and not getattr(m, "sticker", False)
-                and not getattr(m, "via_bot_id", False)
+                lambda: (
+                    not getattr(m, "out", False)
+                    and not getattr(m, "fwd_from", False)
+                    and not getattr(m, "sticker", False)
+                    and not getattr(m, "via_bot_id", False)
+                )
             ),
             "no_media": lambda: (
                 not isinstance(m, Message) or not getattr(m, "media", False)
@@ -554,14 +595,18 @@ class CommandDispatcher:
             ),
             "no_channels": lambda: not getattr(m, "is_channel", False),
             "no_groups": (
-                lambda: not getattr(m, "is_group", False)
-                or getattr(m, "is_private", False)
-                or getattr(m, "is_channel", False)
+                lambda: (
+                    not getattr(m, "is_group", False)
+                    or getattr(m, "is_private", False)
+                    or getattr(m, "is_channel", False)
+                )
             ),
             "only_groups": (
-                lambda: getattr(m, "is_group", False)
-                or not getattr(m, "is_private", False)
-                and not getattr(m, "is_channel", False)
+                lambda: (
+                    getattr(m, "is_group", False)
+                    or not getattr(m, "is_private", False)
+                    and not getattr(m, "is_channel", False)
+                )
             ),
             "no_pm": lambda: not getattr(m, "is_private", False),
             "only_pm": lambda: getattr(m, "is_private", False),
@@ -586,11 +631,13 @@ class CommandDispatcher:
             "contains": lambda: isinstance(m, Message) and func.contains in m.raw_text,
             "filter": lambda: callable(func.filter) and func.filter(m),
             "from_id": lambda: getattr(m, "sender_id", None) == func.from_id,
-            "chat_id": lambda: utils.get_chat_id(m)
-            == (
-                func.chat_id
-                if not str(func.chat_id).startswith("-100")
-                else int(str(func.chat_id)[4:])
+            "chat_id": lambda: (
+                utils.get_chat_id(m)
+                == (
+                    func.chat_id
+                    if not str(func.chat_id).startswith("-100")
+                    else int(str(func.chat_id)[4:])
+                )
             ),
             "regex": lambda: (
                 isinstance(m, Message) and re.search(func.regex, m.raw_text)
@@ -624,6 +671,7 @@ class CommandDispatcher:
     ):
         """Handle all incoming messages"""
         message = utils.censor(getattr(event, "message", event))
+        message = self._patch_message_emoji_methods(message)
 
         blacklist_chats = self._db.get(main.__name__, "blacklist_chats", [])
         whitelist_chats = self._db.get(main.__name__, "whitelist_chats", [])

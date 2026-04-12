@@ -47,7 +47,7 @@ TG_EMOJI_TAG_PATTERN = re.compile(
 )
 
 
-def _use_exteragram_emoji_links(message: typing.Any) -> bool:
+def use_exteragram_emoji_links(message: typing.Any) -> bool:
     if not isinstance(message, Message):
         return False
 
@@ -66,11 +66,11 @@ def _use_exteragram_emoji_links(message: typing.Any) -> bool:
     return bool(db.get("RatkoSettingsMod", "exteragram_emoji", False))
 
 
-def _replace_tg_emoji_tags(response: str, message: typing.Any) -> str:
+def replace_tg_emoji_tags(response: str, message: typing.Any) -> str:
     if not isinstance(response, str) or "<tg-emoji" not in response:
         return response
 
-    if not _use_exteragram_emoji_links(message):
+    if not use_exteragram_emoji_links(message):
         return response
 
     def _replace(match: re.Match) -> str:
@@ -384,7 +384,7 @@ async def answer(
     )
 
     if isinstance(response, str):
-        response = _replace_tg_emoji_tags(response, message)
+        response = replace_tg_emoji_tags(response, message)
 
     if isinstance(response, str) and not kwargs.pop("asfile", False):
         text, entities = parse_mode.parse(response)
