@@ -76,6 +76,9 @@ class UpdaterMod(loader.Module):
             ),
         )
 
+    def _exteragram_text(self, text: str) -> str:
+        return utils.replace_tg_emoji_tags(text, self._client)
+
     async def _set_autoupdate_state(self, call: BotInlineCall, state: bool):
         self.set("autoupdate", True)
         if not state:
@@ -143,7 +146,9 @@ class UpdaterMod(loader.Module):
                         if announcement and announcement != previous:
                             await self.inline.bot.send_message(
                                 self.tg_id,
-                                self.strings("announcement").format(announcement),
+                                self._exteragram_text(
+                                    self.strings("announcement").format(announcement)
+                                ),
                             )
                             self.set("announcement", announcement)
                     case _:
@@ -198,14 +203,16 @@ class UpdaterMod(loader.Module):
                 m = await self.inline.bot.send_photo(
                     self.tg_id,
                     "https://raw.githubusercontent.com/unsidogandon/ratko/main/upd.jpg",
-                    caption=self.strings("update_required").format(
-                        utils.get_git_hash()[:6],
-                        f'<a href="{REPO_URL}/compare/{{}}...{{}}">{{}}</a>'.format(
-                            utils.get_git_hash()[:12],
-                            self.get_latest()[:12],
-                            self.get_latest()[:6],
-                        ),
-                        self.get_changelog(),
+                    caption=self._exteragram_text(
+                        self.strings("update_required").format(
+                            utils.get_git_hash()[:6],
+                            f'<a href="{REPO_URL}/compare/{{}}...{{}}">{{}}</a>'.format(
+                                utils.get_git_hash()[:12],
+                                self.get_latest()[:12],
+                                self.get_latest()[:6],
+                            ),
+                            self.get_changelog(),
+                        )
                     ),
                     reply_markup=self._markup(),
                 )
@@ -221,14 +228,16 @@ class UpdaterMod(loader.Module):
                 m = await self.inline.bot.send_photo(
                     self.tg_id,
                     "https://raw.githubusercontent.com/unsidogandon/ratko/main/upd.jpg",
-                    caption=self.strings("autoupdate_notifier").format(
-                        self.get_latest()[:6],
-                        self.get_changelog(),
-                        f'<a href="{REPO_URL}/compare/{{}}...{{}}">{{}}</a>'.format(
-                            utils.get_git_hash()[:12],
-                            self.get_latest()[:12],
-                            "🔎 diff",
-                        ),
+                    caption=self._exteragram_text(
+                        self.strings("autoupdate_notifier").format(
+                            self.get_latest()[:6],
+                            self.get_changelog(),
+                            f'<a href="{REPO_URL}/compare/{{}}...{{}}">{{}}</a>'.format(
+                                utils.get_git_hash()[:12],
+                                self.get_latest()[:12],
+                                "🔎 diff",
+                            ),
+                        )
                     ),
                 )
                 await self.invoke("update", "-f", peer=self.inline.bot_username)
@@ -575,7 +584,7 @@ class UpdaterMod(loader.Module):
             await self.inline.bot.send_photo(
                 self.tg_id,
                 photo="https://raw.githubusercontent.com/unsidogandon/ratko/main/upd.jpg",
-                caption=self.strings("autoupdate"),
+                caption=self._exteragram_text(self.strings("autoupdate")),
                 reply_markup=self.inline.generate_markup(
                     [
                         [
@@ -697,6 +706,7 @@ class UpdaterMod(loader.Module):
             took = "n/a"
 
         msg = self.strings("success").format(utils.ascii_face(), took)
+        msg = self._exteragram_text(msg)
         ms = self.get("selfupdatemsg")
 
         if ":" in str(ms):
@@ -736,6 +746,8 @@ class UpdaterMod(loader.Module):
             msg = self.strings(
                 "secure_boot_fail" if secure_boot else "full_fail"
             ).format(utils.ascii_face(), took, fails)
+
+        msg = self._exteragram_text(msg)
 
         if ms is None:
             return

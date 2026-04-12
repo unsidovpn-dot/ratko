@@ -52,10 +52,13 @@ LEGACY_EMOJI_TAG_PATTERN = re.compile(
 
 
 def use_exteragram_emoji_links(message: typing.Any) -> bool:
-    if not isinstance(message, Message):
-        return False
+    if isinstance(message, Message):
+        client = getattr(message, "client", None)
+    elif hasattr(message, "loader") and hasattr(message, "heroku_me"):
+        client = message
+    else:
+        client = getattr(message, "client", None)
 
-    client = getattr(message, "client", None)
     if client is None:
         return False
 
