@@ -49,6 +49,7 @@ class CoreMod(loader.Module):
                 }
                 for platform in [
                     "vds",
+                    "termux",
                     "wsl",
                     "userland",
                     "jamhost",
@@ -499,7 +500,7 @@ class CoreMod(loader.Module):
         args = utils.get_args_raw(message)
 
         if (
-            not args or args not in {"-vds", "-wsl", "-ul", "-jh", "-hh", "-lh"}
+            not args or args not in {"-vds", "-tm", "-wsl", "-ul", "-jh", "-hh", "-lh"}
         ) and not (
             await self.inline.form(
                 self.strings("choose_installation"),
@@ -517,6 +518,8 @@ class CoreMod(loader.Module):
         match True:
             case _ if "-vds" in args:
                 await utils.answer(message, self.strings("vds_install"))
+            case _ if "-tm" in args:
+                await utils.answer(message, self.strings("termux_install"))
             case _ if "-wsl" in args:
                 await utils.answer(message, self.strings("wsl_install"))
             case _ if "-ul" in args:
