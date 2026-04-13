@@ -563,7 +563,7 @@ class RatkoSettingsMod(loader.Module):
                             False,
                         ),
                     }
-                    if self.get("exteragram_emoji", False)
+                    if self.get("exteragram_emoji", True)
                     else {
                         "text": "🚫 exteraGram эмодзи",
                         "callback": self.inline__setting,

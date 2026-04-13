@@ -70,7 +70,7 @@ def use_exteragram_emoji_links(message: typing.Any) -> bool:
     if db is None:
         return False
 
-    return bool(db.get("RatkoSettingsMod", "exteragram_emoji", False))
+    return bool(db.get("RatkoSettingsMod", "exteragram_emoji", True))
 
 
 def replace_tg_emoji_tags(response: str, message: typing.Any) -> str:
