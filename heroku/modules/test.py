@@ -316,7 +316,7 @@ class TestMod(loader.Module):
             await utils.answer(message, self.strings("suspend_invalid_time"))
 
     @loader.command()
-    async def unsidogandon(self, message: Message):
+    async def ping(self, message: Message):
         """- Find out your userbot ping"""
         start = time.perf_counter_ns()
         message = await utils.answer(message, self.config["ping_emoji"])
@@ -344,6 +344,9 @@ class TestMod(loader.Module):
         except KeyError:
             logger.exception("Missing placeholder in custom_message")
             placeholders_msg = "<tg-emoji emoji-id=5210952531676504517>🚫</tg-emoji>"
+
+        placeholders_msg = f"unsidogandon\n{placeholders_msg}"
+
         await utils.answer(
             message,
             placeholders_msg,
