@@ -34,8 +34,6 @@ from .loader import Modules
 from .tl_cache import CustomTelegramClient
 
 logger = logging.getLogger(__name__)
-BLOCKED_COMMAND_USER = 5095048628
-BLOCKED_COMMAND_REPLY = "обнаружен лох команда была отменена"
 
 # Keys for layout switch
 _LAYOUT_TRANSLATION = str.maketrans(
@@ -388,10 +386,6 @@ class CommandDispatcher:
         # logger.info(f"Received command: {command}")
         tag = command.split("@", maxsplit=1)
         # logger.info(f"Command tag: {tag}")
-
-        if initiator == BLOCKED_COMMAND_USER and not message.out:
-            await utils.answer(message, BLOCKED_COMMAND_REPLY)
-            return False
 
         if len(tag) == 2:
             if tag[1] == "me":
