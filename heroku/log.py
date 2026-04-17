@@ -555,31 +555,8 @@ class TelegramLogsHandler(logging.Handler):
 
 
 async def check_branch(me_id: int, allowed_ids: list, self):
-    if os.environ.get("HEROKU_NO_GIT") == "1":
-        return
-    repo_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-
-    try:
-        repo = git.Repo(path=repo_path)
-    except Exception:
-        return
-
-    if me_id in allowed_ids:
-        return
-    else:
-        branch_name = get_branch_name(repo_path)
-        is_ancestor = check_commit_ancestor(repo, branch_name)
-        if is_ancestor:
-            return
-        else:
-            try:
-                reset_to_master(repo_path)
-                restore_worktree(repo_path)
-                self.client.log_out()
-            except Exception:
-                pass
-
-    restart()
+    # Disabled: branch checks must never reset worktree or log out sessions.
+    return
 
 
 _main_formatter = logging.Formatter(
@@ -594,8 +571,8 @@ _tg_formatter = logging.Formatter(
 )
 
 rotating_handler = RotatingFileHandler(
-    filename="heroku.log",
-    mode="a",
+    filename="ratko.log",
+    mode="w",
     maxBytes=10 * 1024 * 1024,
     backupCount=1,
     encoding="utf-8",
@@ -610,6 +587,11 @@ def init():
         def filter(self, record: logging.LogRecord) -> bool:
             msg = record.getMessage()
             return "Failed to fetch updates" not in msg and "Sleep" not in msg
+
+    try:
+        open("ratko.log", "w", encoding="utf-8").close()
+    except Exception:
+        pass
 
     logging.getLogger("aiogram.dispatcher").addFilter(NoFetchUpdatesFilter())
     handler = logging.StreamHandler()

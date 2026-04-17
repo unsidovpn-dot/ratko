@@ -82,11 +82,7 @@ class Web(root.Web):
         self._username = self._rand(12)
         self._password = self._rand(20)
 
-        logger.debug(
-            "First start. Starting web with %s username and %s password",
-            self._username,
-            self._password,
-        )
+        logger.debug("First start. Web credentials were generated")
 
     def _rand(self, length: int) -> str:
         alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"

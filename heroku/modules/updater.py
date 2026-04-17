@@ -111,14 +111,28 @@ class UpdaterMod(loader.Module):
             return False
 
         commits = [line for line in raw_diff.splitlines() if line.strip()]
-        res = "\n".join(
-            f"<b>{commit.split(chr(31), 1)[0][:7]}</b>:"
-            f" <i>{utils.escape_html(commit.split(chr(31), 1)[1])}</i>"
-            for commit in commits[:10]
-            if chr(31) in commit
-        )
+        rendered = []
+        total_limit = 360
 
-        if len(commits) > 10:
+        for commit in commits[:10]:
+            if chr(31) not in commit:
+                continue
+
+            sha, text = commit.split(chr(31), 1)
+            item = f"<b>{sha[:7]}</b>: <i>{utils.escape_html(text)}</i>"
+
+            if sum(len(x) for x in rendered) + len(rendered) + len(item) > total_limit:
+                break
+
+            rendered.append(item)
+
+        res = "\n".join(rendered)
+
+        if len(rendered) < len([c for c in commits[:10] if chr(31) in c]):
+            res += self.strings("more").format(
+                len([c for c in commits if chr(31) in c]) - len(rendered)
+            )
+        elif len(commits) > 10:
             res += self.strings("more").format(len(commits) - 10)
 
         return res

@@ -26,7 +26,9 @@ import socket
 import sqlite3
 import string
 import sys
+import shutil
 import typing
+import time
 from getpass import getpass
 from pathlib import Path
 
@@ -45,6 +47,7 @@ from herokutl.network.connection import (
     ConnectionTcpMTProxyRandomizedIntermediate,
 )
 from herokutl.password import compute_check
+from herokutl.tl.functions.updates import GetStateRequest
 from herokutl.sessions import MemorySession, SQLiteSession
 from herokutl.tl.functions.account import GetPasswordRequest
 from herokutl.tl.functions.auth import CheckPasswordRequest
@@ -55,6 +58,8 @@ from ._internal import print_banner, restart
 from .dispatcher import CommandDispatcher
 from .inline.token_obtainment import TokenObtainment
 from .inline.utils import Utils as inutils
+from .logo import build_startup_logo
+from .progresslive import StartupLiveDisplay
 from .qr import QRCode
 from .secure import patcher
 from .tl_cache import CustomTelegramClient
@@ -82,35 +87,22 @@ _CONFIG_MTIME_NS: typing.Optional[int] = None
 
 # fmt: off
 LATIN_MOCK = [
-    "Amor", "Arbor", "Astra", "Aurum", "Bellum", "Caelum",
-    "Calor", "Candor", "Carpe", "Celer", "Certo", "Cibus",
-    "Civis", "Clemens", "Coetus", "Cogito", "Conexus",
-    "Consilium", "Cresco", "Cura", "Cursus", "Decus",
-    "Deus", "Dies", "Digitus", "Discipulus", "Dominus",
-    "Donum", "Dulcis", "Durus", "Elementum", "Emendo",
-    "Ensis", "Equus", "Espero", "Fidelis", "Fides",
-    "Finis", "Flamma", "Flos", "Fortis", "Frater", "Fuga",
-    "Fulgeo", "Genius", "Gloria", "Gratia", "Gravis",
-    "Habitus", "Honor", "Hora", "Ignis", "Imago",
-    "Imperium", "Inceptum", "Infinitus", "Ingenium",
-    "Initium", "Intra", "Iunctus", "Iustitia", "Labor",
-    "Laurus", "Lectus", "Legio", "Liberi", "Libertas",
-    "Lumen", "Lux", "Magister", "Magnus", "Manus",
-    "Memoria", "Mens", "Mors", "Mundo", "Natura",
-    "Nexus", "Nobilis", "Nomen", "Novus", "Nox",
-    "Oculus", "Omnis", "Opus", "Orbis", "Ordo", "Os",
-    "Pax", "Perpetuus", "Persona", "Petra", "Pietas",
-    "Pons", "Populus", "Potentia", "Primus", "Proelium",
-    "Pulcher", "Purus", "Quaero", "Quies", "Ratio",
-    "Regnum", "Sanguis", "Sapientia", "Sensus", "Serenus",
-    "Sermo", "Signum", "Sol", "Solus", "Sors", "Spes",
-    "Spiritus", "Stella", "Summus", "Teneo", "Terra",
-    "Tigris", "Trans", "Tribuo", "Tristis", "Ultimus",
-    "Unitas", "Universus", "Uterque", "Valde", "Vates",
-    "Veritas", "Verus", "Vester", "Via", "Victoria",
-    "Vita", "Vox", "Vultus", "Zephyrus", "Bimbalas", "Nywuctuu",
-    "Anyone", "Draher", "Hackimo", "Silvyr",
-
+    "Amor", "Arbor", "Astra", "Aurum", "Bellum", "Caelum", "Calor",
+    "Candor", "Carpe", "Celer", "Certo", "Cibus", "Civis", "Clemens",
+    "Coetus", "Cogito", "Conexus", "Consilium", "Cresco", "Cura",
+    "Cursus", "Decus", "Deus", "Dies", "Digitus", "Discipulus",
+    "Dominus", "Donum", "Dulcis", "Durus", "Elementum", "Emendo",
+    "Ensis", "Equus", "Espero", "Fidelis", "Fides", "Finis", "Flamma",
+    "Flos", "Fortis", "Frater", "Fuga", "Fulgeo", "Genius", "Gloria",
+    "Gratia", "Honor", "Ignis", "Imago", "Imperium", "Ingenium",
+    "Initium", "Iustitia", "Labor", "Laurus", "Legio", "Libertas",
+    "Lumen", "Lux", "Magnus", "Memoria", "Mens", "Natura", "Nexus",
+    "Nobilis", "Novus", "Oculus", "Opus", "Orbis", "Ordo", "Pax",
+    "Persona", "Potentia", "Primus", "Purus", "Quaero", "Quies",
+    "Ratio", "Regnum", "Sapientia", "Sensus", "Serenus", "Signum",
+    "Sol", "Spes", "Spiritus", "Stella", "Summus", "Terra", "Unitas",
+    "Universus", "Valde", "Veritas", "Victoria", "Vita", "Vox", "Vultus",
+    "Zephyrus",
 ]
 # fmt: on
 
@@ -130,7 +122,11 @@ def get_app_name() -> str:
     :return: App name
     :example: "Cresco Cibus Consilium"
     """
-    if not (app_name := get_config_key("app_name")):
+    app_name = get_config_key("app_name")
+    if app_name and app_name.strip().lower() == "ratko ratko ratko":
+        app_name = None
+
+    if not app_name:
         app_name = generate_app_name()
         save_config_key("app_name", app_name)
 
@@ -288,6 +284,7 @@ def generate_random_system_version():
         ("Commodore", "64 OS"),
     ]
     os_name, os_version = random.choice(os_choices)
+
 
     version = f"{os_name} {os_version}"
     return version
@@ -513,6 +510,11 @@ class Heroku:
         global BASE_DIR, BASE_PATH, CONFIG_PATH
         self.omit_log = False
         self.arguments = parse_arguments()
+        self.started_at = time.time()
+        self.startup_live = StartupLiveDisplay(enabled=self.arguments.tty)
+        self._startup_live_claimed = False
+        self._live_ping_task = None
+        self._background_startup_tasks = set()
         if self.arguments.no_git:
             os.environ["HEROKU_NO_GIT"] = "1"
         if self.arguments.data_root:
@@ -551,15 +553,26 @@ class Heroku:
 
     def _read_sessions(self):
         """Gets sessions from environment and data directory"""
-        self.sessions = []
+        sessions_map = {}
         with os.scandir(BASE_DIR) as entries:
-            self.sessions += [
-                SQLiteSession(entry.path.rsplit(".session", maxsplit=1)[0])
-                for entry in entries
-                if entry.is_file()
-                and entry.name.startswith("heroku-")
-                and entry.name.endswith(".session")
-            ]
+            for entry in entries:
+                if not entry.is_file() or not entry.name.endswith(".session"):
+                    continue
+
+                if not entry.name.startswith(("ratko-", "heroku-")):
+                    continue
+
+                session_name = entry.name.rsplit(".session", maxsplit=1)[0]
+                session_id = session_name.split("-", maxsplit=1)[-1]
+                existing = sessions_map.get(session_id)
+                # Prefer new ratko sessions over old heroku ones for the same account.
+                if existing and existing.filename.startswith(str(BASE_PATH / f"ratko-")):
+                    continue
+
+                if session_name.startswith("ratko-") or existing is None:
+                    sessions_map[session_id] = SQLiteSession(entry.path.rsplit(".session", maxsplit=1)[0])
+
+        self.sessions = list(sessions_map.values())
 
     def _get_api_token(self):
         """Get API Token from disk or environment"""
@@ -642,13 +655,14 @@ class Heroku:
             telegram_id = me.id
             client._tg_id = telegram_id
             client.tg_id = telegram_id
+            client.id = telegram_id
             client.hikka_me = me
             client.heroku_me = me
 
         session = SQLiteSession(
             os.path.join(
                 BASE_DIR,
-                f"heroku-{telegram_id}",
+                f"ratko-{telegram_id}",
             )
         )
 
@@ -662,6 +676,9 @@ class Heroku:
 
         session.save()
 
+        legacy_session = Path(BASE_DIR) / f"heroku-{telegram_id}.session"
+        legacy_session.unlink(missing_ok=True)
+
         if not delay_restart:
             await client.disconnect()
             restart()
@@ -674,7 +691,7 @@ class Heroku:
 
         try:
             db = client.heroku_db
-            existing = db.get("heroku.inline", "custom_bot", False)
+            existing = db.get("ratko.inline", "custom_bot", False)
         except Exception:
             existing = False
 
@@ -684,7 +701,7 @@ class Heroku:
             and not existing
         ):
             while bot := input(
-                "You can enter a custom bot username or leave it empty and Heroku will generate a random one: "
+                "You can enter a custom bot username or leave it empty and Ratko will generate a random one: "
             ):
                 bot = bot.strip()
                 bot = bot.lstrip("@")
@@ -700,7 +717,7 @@ class Heroku:
                     continue
                 try:
                     if await self._check_bot(client, bot):
-                        db.set("heroku.inline", "custom_bot", bot)
+                        db.set("ratko.inline", "custom_bot", bot)
                         print("Bot username saved!")
                         break
                     else:
@@ -718,15 +735,89 @@ class Heroku:
         logging.info("🔎 Web mode ready for configuration")
         logging.info("🔗 Please visit %s", self.web.url)
         if self.web._username and self.web._password:
-            logging.info(
-                "🔐 Use following credentials to log in:\n👤 Username: %s\n🔑 Password: %s",
-                self.web._username,
-                self.web._password,
-            )
+            print("🔐 Web login credentials were generated for first start")
+            print(f"👤 Username: {self.web._username}")
+            print(f"🔑 Password: {self.web._password}")
         if "serveo" in self.web.url:
             logging.warning("⚠️  You might see a Serveo warning before opening this link.")
             logging.warning("⚠️  This is normal for free Serveo tunnels.")
             logging.warning("⚠️  The page is only used to register your userbot session.")
+
+    def _reg_color(self, text: str, color: str = "96") -> str:
+        return f"\033[0;{color}m{text}\033[0m" if self.arguments.tty else text
+
+    def _show_registration_step(self, title: str, lines: typing.Optional[list[str]] = None):
+        if self.arguments.tty:
+            sys.stdout.write("\033[3J\033[2J\033[H")
+            sys.stdout.write(
+                build_startup_logo(
+                    "setup",
+                    ".".join(map(str, __version__)),
+                    "registration",
+                )
+            )
+            sys.stdout.flush()
+
+        print(self._reg_color(f"[{title}]", "95"))
+        if lines:
+            for line in lines:
+                print(self._reg_color(f"• {line}", "96"))
+        print()
+
+    def _center_prompt(self, text: str, offset: int = -1) -> str:
+        if not self.arguments.tty:
+            return text
+
+        width = shutil.get_terminal_size((100, 20)).columns
+        pad = max((width - len(text)) // 2 + offset, 0)
+        return " " * pad + self._reg_color(text)
+
+    def _center_input_prefix(self, field_width: int = 24) -> str:
+        if not self.arguments.tty:
+            return ""
+
+        width = shutil.get_terminal_size((100, 20)).columns
+        return " " * max((width - field_width) // 2 - 1, 0)
+
+    def _prompt_input(self, text: str) -> str:
+        if self.arguments.disable_web:
+            if self.arguments.tty:
+                print(self._center_prompt(text))
+                print(self._center_input_prefix(), end="", flush=True)
+                return input()
+
+            print(text, end="", flush=True)
+            return input()
+
+        prompt = self._center_prompt(text) if self.arguments.tty else text
+        print(prompt, end="", flush=True)
+        return input()
+
+    def _prompt_secret(self, text: str) -> str:
+        if self.arguments.disable_web:
+            if self.arguments.tty:
+                print(self._center_prompt(text))
+                print(self._center_input_prefix(), end="", flush=True)
+                return getpass("")
+
+            print(text, end="", flush=True)
+            return getpass("")
+
+        prompt = self._center_prompt(text) if self.arguments.tty else text
+        print(prompt, end="", flush=True)
+        return getpass("")
+
+    def _flush_stdin(self):
+        if not self.arguments.disable_web:
+            return
+
+        try:
+            import termios
+
+            if hasattr(sys.stdin, "isatty") and sys.stdin.isatty():
+                termios.tcflush(sys.stdin.fileno(), termios.TCIFLUSH)
+        except Exception:
+            pass
 
     async def wait_for_web_auth(self, token: str) -> bool:
         """
@@ -746,35 +837,95 @@ class Heroku:
         return False
 
     async def _phone_login(self, client: CustomTelegramClient) -> bool:
-        phone = input(
-            "\033[0;96mEnter phone: \033[0m" if self.arguments.tty else "Enter phone: "
+        self._show_registration_step(
+            "Phone Login",
+            [
+                "Enter your Telegram number in international format",
+                "Example: +1234567890",
+                "After login you can set an optional inline bot username",
+            ],
         )
+        self._flush_stdin()
 
-        await client.start(phone)
+        while True:
+            phone = self._prompt_input("Enter phone number: ").strip().replace(" ", "")
+            if not phone:
+                continue
+            if not phone.startswith("+"):
+                phone = f"+{phone}"
+            if phone[1:].isdigit() and 5 <= len(phone[1:]) <= 15:
+                break
+            print(self._reg_color("Invalid phone number! Use international format like +1234567890", "91"))
+
+        try:
+            sent = await client.send_code_request(phone)
+        except FloodWaitError as e:
+            print(self._reg_color(f"FloodWait: wait {e.seconds}s", "91"))
+            return False
+        except Exception as e:
+            print(self._reg_color(f"Failed to send code: {e}", "91"))
+            return False
+
+        code = self._prompt_input("Enter login code: ").strip()
+
+        try:
+            await client.sign_in(phone=phone, code=code, phone_code_hash=sent.phone_code_hash)
+        except SessionPasswordNeededError:
+            print_banner("2fa.txt")
+            print(self._reg_color("[Two-Factor Authentication]", "95"))
+            print(self._reg_color("Your account requires a 2FA password", "96"))
+            print()
+            while True:
+                password = self._prompt_secret("Enter 2FA password: ").strip()
+                try:
+                    await client.sign_in(phone=phone, password=password)
+                    break
+                except PasswordHashInvalidError:
+                    print(self._reg_color("Invalid 2FA password!", "91"))
+                except FloodWaitError as e:
+                    print(self._reg_color(f"FloodWait: wait {e.seconds}s", "91"))
+                    return False
+        except FloodWaitError as e:
+            print(self._reg_color(f"FloodWait: wait {e.seconds}s", "91"))
+            return False
+        except Exception as e:
+            print(self._reg_color(f"Login failed: {e}", "91"))
+            return False
 
         me = await client.get_me()
         telegram_id = me.id
         client._tg_id = telegram_id
         client.tg_id = telegram_id
+        client.id = telegram_id
         client.hikka_me = me
         client.heroku_me = me
 
         db = database.Database(client)
         await db.init()
 
-        while bot := input(
-            "You can enter a custom bot username or leave it empty and Heroku will generate a random one: "
-        ):
+        self._show_registration_step(
+            "Inline Bot",
+            [
+                "Enter a custom bot username if you want one",
+                "Or leave it empty and Ratko will generate it automatically",
+            ],
+        )
+        while bot := self._prompt_input("Custom bot username (optional): "):
             try:
                 if await self._check_bot(client, bot):
-                    db.set("heroku.inline", "custom_bot", bot)
-                    print("Bot username saved!")
+                    db.set("ratko.inline", "custom_bot", bot)
+                    print(self._reg_color("Bot username saved!", "92"))
                     break
                 else:
-                    print("Bot username is occupied. Try again or leave it empty")
+                    print(
+                        self._reg_color(
+                            "Bot username is occupied. Try again or leave it empty",
+                            "93",
+                        )
+                    )
                     continue
             except Exception:
-                print("Something went wrong")
+                print(self._reg_color("Something went wrong", "91"))
 
         await self.save_client_session(client)
         self.clients += [client]
@@ -824,6 +975,17 @@ class Heroku:
             return False
 
         if not self.web:
+            if self.arguments.tty:
+                sys.stdout.write("\033[2J\033[H")
+                sys.stdout.write(
+                    build_startup_logo(
+                        "setup",
+                        ".".join(map(str, __version__)),
+                        "registration",
+                    )
+                )
+                sys.stdout.flush()
+
             client = CustomTelegramClient(
                 MemorySession(),
                 self.api_token.ID,
@@ -839,18 +1001,19 @@ class Heroku:
             )
             await client.connect()
 
-            print(
-                ("\033[0;96m{}\033[0m" if self.arguments.tty else "{}").format(
-                    "You can use QR-code to login from another device (your friend's"
-                    " phone, for example)."
-                )
+            self._show_registration_step(
+                "Registration",
+                [
+                    "You can log in with QR code from another device",
+                    "Or continue with your phone number",
+                    "Choose the option that is easier for you",
+                ],
             )
 
-            user_choice = input(
-                "\033[0;96mUse QR code? [y/N]: \033[0m"
-                if self.arguments.tty
-                else "Use QR code? [y/N]: "
-            ).lower()
+            if self.arguments.disable_web and not self.arguments.qr_login:
+                return await self._phone_login(client)
+
+            user_choice = self._prompt_input("Use QR code? [y/N]: ").lower()
 
             match user_choice:
                 case "y":
@@ -858,16 +1021,28 @@ class Heroku:
                 case _:
                     return await self._phone_login(client)
 
-            print("\033[0;96mLoading QR code...\033[0m")
+            self._show_registration_step(
+                "QR Login",
+                [
+                    "A QR code will appear below",
+                    "Scan it in Telegram from another logged-in device",
+                    "Press Ctrl+C to return to phone login",
+                ],
+            )
+            print(self._reg_color("Loading QR code...", "96"))
             qr_login = await client.qr_login()
 
             def print_qr():
                 qr = QRCode()
                 qr.add_data(qr_login.url)
                 print("\033[2J\033[3;1f")
+                print(self._reg_color("[QR Login]", "95"))
+                print(self._reg_color("Scan the QR code below in Telegram", "96"))
+                print()
                 qr.print_ascii(invert=True)
-                print("\033[0;96mScan the QR code above to log in.\033[0m")
-                print("\033[0;96mPress Ctrl+C to cancel.\033[0m")
+                print()
+                print(self._reg_color("Scan the QR code above to log in.", "96"))
+                print(self._reg_color("Press Ctrl+C to cancel.", "96"))
 
             async def qr_login_poll() -> bool:
                 logged_in = False
@@ -894,12 +1069,13 @@ class Heroku:
 
                 case True:
                     print_banner("2fa.txt")
+                    print(self._reg_color("[Two-Factor Authentication]", "95"))
+                    print(self._reg_color("Your account requires a 2FA password", "96"))
+                    print()
                     password = await client(GetPasswordRequest())
                     while True:
-                        _2fa = getpass(
-                            f"\033[0;96mEnter 2FA password ({password.hint}): \033[0m"
-                            if self.arguments.tty
-                            else f"Enter 2FA password ({password.hint}): "
+                        _2fa = self._prompt_secret(
+                            f"Enter 2FA password ({password.hint}): "
                         )
                         try:
                             await client._on_login(
@@ -912,7 +1088,7 @@ class Heroku:
                                 ).user
                             )
                         except PasswordHashInvalidError:
-                            print("\033[0;91mInvalid 2FA password!\033[0m")
+                            print(self._reg_color("Invalid 2FA password!", "91"))
                         except FloodWaitError as e:
                             seconds, minutes, hours = (
                                 e.seconds % 3600 % 60,
@@ -925,8 +1101,11 @@ class Heroku:
                                 f"{hours} hour(-s) " if hours else "",
                             )
                             print(
-                                "\033[0;91mYou got FloodWait error! Please wait"
-                                f" {hours}{minutes}{seconds}\033[0m"
+                                self._reg_color(
+                                    "You got FloodWait error! Please wait"
+                                    f" {hours}{minutes}{seconds}",
+                                    "91",
+                                )
                             )
                             return False
                         else:
@@ -935,7 +1114,9 @@ class Heroku:
                     pass
 
             print_banner("success.txt")
-            print("\033[0;92mLogged in successfully!\033[0m")
+            print(self._reg_color("[Success]", "92"))
+            print(self._reg_color("Logged in successfully!", "92"))
+            print(self._reg_color("Session saved. Starting userbot...", "96"))
             await self.save_client_session(client)
             self.clients += [client]
             return True
@@ -958,6 +1139,7 @@ class Heroku:
         """
         for session in self.sessions.copy():
             try:
+                logging.info("Init session %s", session.filename)
                 client = CustomTelegramClient(
                     session,
                     self.api_token.ID,
@@ -975,9 +1157,16 @@ class Heroku:
                     patcher.patch(client, session)
 
                 await client.connect()
+                logging.info("Connected session %s", session.filename)
+                if not await client.is_user_authorized():
+                    logging.warning("Session %s is not authorized, skipping", session.filename)
+                    await client.disconnect()
+                    continue
+
                 client.phone = "None"
 
                 self.clients += [client]
+                logging.info("Session %s is authorized and queued", session.filename)
             except sqlite3.OperationalError:
                 logging.error(
                     "Check that this is the only instance running. "
@@ -985,9 +1174,15 @@ class Heroku:
                     session.filename,
                 )
                 continue
-            except (TypeError, AuthKeyDuplicatedError):
+            except AuthKeyDuplicatedError:
                 Path(session.filename).unlink(missing_ok=True)
                 self.sessions.remove(session)
+            except TypeError:
+                logging.exception(
+                    "TypeError while initializing session %s. Keeping session file.",
+                    session.filename,
+                )
+                continue
             except (ValueError, ApiIdInvalidError):
                 # Bad API hash/ID
                 run_config()
@@ -1005,20 +1200,22 @@ class Heroku:
                 )
                 self.sessions.remove(session)
 
-        return bool(self.sessions)
+        return bool(self.clients)
 
     async def amain_wrapper(self, client: CustomTelegramClient):
         """Wrapper around amain"""
-        async with client:
-            first = True
-            me = await client.get_me()
-            client._tg_id = me.id
-            client.tg_id = me.id
-            client.hikka_me = me
-            client.heroku_me = me
+        logging.info("amain_wrapper start for client")
+        first = True
+        me = await client.get_me()
+        logging.info("Got self user %s", me.id)
+        client._tg_id = me.id
+        client.tg_id = me.id
+        client.id = me.id
+        client.hikka_me = me
+        client.heroku_me = me
 
-            while await self.amain(first, client):
-                first = False
+        while await self.amain(first, client):
+            first = False
 
     async def _badge(self, client: CustomTelegramClient):
         """Call the badge in shell"""
@@ -1036,21 +1233,15 @@ class Heroku:
                     os.environ["HEROKU_NO_GIT"] = "1"
                     build = "unknown"
                     upd = "Git unavailable"
-            pref = client.heroku_db.get("heroku.main", "command_prefix", None)
+            pref = client.heroku_db.get("ratko.main", "command_prefix", None)
 
-            logo = (
-                "RRRR    AAA   TTTTT K   K  OOO\n"
-                "R   R  A   A    T   K  K  O   O\n"
-                "RRRR   AAAAA    T   KKK   O   O\n"
-                "R  R   A   A    T   K  K  O   O\n"
-                "R   R  A   A    T   K   K  OOO\n\n"
-                f"• Build: {build[:7]}\n"
-                f"• Version: {'.'.join(list(map(str, list(__version__))))}\n"
-                f"• {upd}\n"
+            logo = build_startup_logo(
+                build,
+                ".".join(list(map(str, list(__version__)))),
+                upd,
             )
             web_url = ""
-            if not self.omit_log:
-                print(logo)
+            if not self.omit_log and "HEROKU_EARLY_LOGO_PRINTED" not in os.environ:
                 if self.web and hasattr(self.web, "url"):
                     web_url = f"🔗 Web url: {self.web.url}"
                     logging.debug(
@@ -1103,6 +1294,28 @@ class Heroku:
         except Exception:
             logging.exception("Badge error")
 
+    async def _measure_live_ping(self, client: CustomTelegramClient) -> str | None:
+        try:
+            started = time.perf_counter()
+            await client(GetStateRequest())
+            elapsed_ms = max(int((time.perf_counter() - started) * 1000), 1)
+            return f"{elapsed_ms}ms" if elapsed_ms < 1000 else f"{elapsed_ms / 1000:.2f}s"
+        except Exception:
+            logging.debug("Unable to measure live ping", exc_info=True)
+            return None
+
+    async def _live_ping_loop(self, client: CustomTelegramClient, progress: StartupLiveDisplay):
+        progress.update_live_ping(await self._measure_live_ping(client))
+
+        while True:
+            await asyncio.sleep(5)
+            progress.update_live_ping(await self._measure_live_ping(client))
+
+    def _track_background_task(self, task: asyncio.Task):
+        self._background_startup_tasks.add(task)
+        task.add_done_callback(self._background_startup_tasks.discard)
+        return task
+
     async def _add_dispatcher(
         self,
         client: CustomTelegramClient,
@@ -1141,20 +1354,43 @@ class Heroku:
 
     async def amain(self, first: bool, client: CustomTelegramClient):
         """Entrypoint for async init, run once for each user"""
+        progress = None
+        if not self._startup_live_claimed:
+            self._startup_live_claimed = True
+            progress = self.startup_live
+
         client.parse_mode = "HTML"
-        await client.start()
+        if not client.is_connected():
+            await client.connect()
+            logging.info("Reconnected client %s", client.tg_id)
+
+        if not await client.is_user_authorized():
+            logging.error("Session %s is not authorized", getattr(client.session, "filename", "unknown"))
+            return False
+        logging.info("Client %s authorized, starting full init", client.tg_id)
+
+        if progress is not None:
+            progress.stage("session connected", advance=True, stage="Session")
 
         db = database.Database(client)
         client.heroku_db = db
         await db.init()
+        logging.info("DB initialized for %s", client.tg_id)
+        if progress is not None:
+            progress.stage("database initialized", advance=True, stage="Database")
         logging.debug("Got DB")
         logging.debug("Loading logging config...")
 
         translator = Translator(client, db)
 
         await translator.init()
+        logging.info("Translator initialized for %s", client.tg_id)
+        if progress is not None:
+            progress.stage("translations loaded", advance=True, stage="Translator")
         modules = loader.Modules(client, db, self.clients, translator)
+        modules.startup_progress = progress
         client.loader = modules
+        logging.info("Modules manager created for %s", client.tg_id)
 
         if self.web:
             await self.web.add_loader(client, modules, db)
@@ -1165,30 +1401,61 @@ class Heroku:
             )
 
         await self._add_dispatcher(client, modules, db)
+        logging.info("Dispatcher attached for %s", client.tg_id)
+        if progress is not None:
+            progress.stage("dispatcher ready", advance=True, stage="Dispatcher")
 
         await modules.register_all(None)
+        logging.info("register_all completed for %s", client.tg_id)
         modules.send_config()
+        if progress is not None:
+            progress.stage("configuration sent", advance=True, stage="Config")
+
         await modules.inline.register_manager()
+        logging.info("Inline manager ready for %s", client.tg_id)
+        if progress is not None:
+            progress.stage("inline manager ready", advance=True, stage="Inline")
+
         await db.ensure_content_channel()
+        logging.info("Content channel ready for %s", client.tg_id)
+        if progress is not None:
+            progress.stage("content channel linked", advance=True, stage="Assets")
+
         await modules.send_ready()
+        logging.info("send_ready completed for %s", client.tg_id)
+        if progress is not None:
+            progress.stage("modules initialized", advance=True, stage="Ready")
 
         if first:
             await self._badge(client)
+
+        if progress is not None:
+            username = (
+                f"@{client.heroku_me.username}"
+                if getattr(client.heroku_me, "username", None)
+                else client.heroku_me.first_name or str(client.tg_id)
+            )
+            progress.finalize(username)
+            modules.startup_progress = None
 
         await client.run_until_disconnected()
 
     async def _main(self):
         """Main entrypoint"""
         self._init_web()
+        logging.info("Main startup begin (no_web=%s)", self.arguments.disable_web)
         inital_web = False
         save_config_key("port", self.arguments.port)
         await self._get_token()
+        logging.info("API token loaded")
 
         if (
             not self.clients and not self.sessions or not await self._init_clients()
         ) and not (inital_web := await self._initial_setup()):
+            logging.info("Initial setup returned false, exiting startup")
             return
-        if inital_web:
+        logging.info("Clients ready for startup: %s", len(self.clients))
+        if inital_web and self.web is not None:
 
             async def scheduled_web_stop():
                 await asyncio.sleep(delay=120)
@@ -1205,13 +1472,33 @@ class Heroku:
             )
         )
 
+        if self.arguments.tty:
+            sys.stdout.write("\033[3J\033[2J\033[H")
+            sys.stdout.write(
+                build_startup_logo(
+                    "startup",
+                    ".".join(map(str, __version__)),
+                    "loading",
+                )
+            )
+            sys.stdout.write("логи сохраняються в ratko.log в корне ратко юзербот\n\n")
+            sys.stdout.flush()
+
+        self.startup_live.start()
+        self.startup_live.stage("Starting userbot", stage="Boot")
+
         await asyncio.gather(
             *[self.amain_wrapper(client) for client in self.clients]
         )
 
     async def _shutdown_handler(self):
+        for task in list(self._background_startup_tasks):
+            task.cancel()
+
+        self.startup_live.stop()
         for client in self.clients:
-            inline = getattr(client.loader, "inline", None)
+            client_loader = getattr(client, "loader", None)
+            inline = getattr(client_loader, "inline", None)
             if inline:
                 for t in (inline._task, inline._cleaner_task):
                     if t:
@@ -1226,11 +1513,14 @@ class Heroku:
         for task in asyncio.all_tasks():
             if task is not asyncio.current_task():
                 task.cancel()
-        self.loop.stop()
 
     def main(self):
         """Main entrypoint"""
-        if sys.platform != "win32":
+        if self.arguments.tty:
+            sys.stdout.write("\033[2J\033[H")
+            sys.stdout.flush()
+
+        if sys.platform != "win32" and not self.arguments.disable_web:
             try:
                 self.loop.add_signal_handler(
                     signal.SIGINT, lambda: asyncio.create_task(self._shutdown_handler())
@@ -1245,6 +1535,8 @@ class Heroku:
         except KeyboardInterrupt:
             logging.info("KeyboardInterrupt received.")
             self.loop.run_until_complete(self._shutdown_handler())
+        except asyncio.CancelledError:
+            logging.info("Main loop cancelled.")
         except Exception as e:
             logging.exception("Unexpected exception in main loop: %s", e)
         finally:
@@ -1257,4 +1549,5 @@ class Heroku:
 
 herokutl.extensions.html.CUSTOM_EMOJIS = not get_config_key("disable_custom_emojis")
 
-heroku = Heroku()
+ratko = Heroku()
+heroku = ratko

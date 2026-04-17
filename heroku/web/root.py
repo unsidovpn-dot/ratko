@@ -368,7 +368,7 @@ class Web:
 
         text = await request.text()
 
-        logger.debug("2FA code received for QR login: %s", text)
+        logger.debug("2FA code received for QR login")
 
         try:
             await self._pending_client._on_login(
