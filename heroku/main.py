@@ -748,7 +748,7 @@ class Heroku:
 
     def _show_registration_step(self, title: str, lines: typing.Optional[list[str]] = None):
         if self.arguments.tty:
-            sys.stdout.write("\033[3J\033[2J\033[H")
+            pass # removed terminal clear
             sys.stdout.write(
                 build_startup_logo(
                     "setup",
@@ -976,7 +976,7 @@ class Heroku:
 
         if not self.web:
             if self.arguments.tty:
-                sys.stdout.write("\033[2J\033[H")
+                pass # removed terminal clear
                 sys.stdout.write(
                     build_startup_logo(
                         "setup",
@@ -1473,7 +1473,7 @@ class Heroku:
         )
 
         if self.arguments.tty:
-            sys.stdout.write("\033[3J\033[2J\033[H")
+            pass # removed terminal clear
             sys.stdout.write(
                 build_startup_logo(
                     "startup",
@@ -1517,7 +1517,7 @@ class Heroku:
     def main(self):
         """Main entrypoint"""
         if self.arguments.tty:
-            sys.stdout.write("\033[2J\033[H")
+            pass # removed terminal clear
             sys.stdout.flush()
 
         if sys.platform != "win32" and not self.arguments.disable_web:

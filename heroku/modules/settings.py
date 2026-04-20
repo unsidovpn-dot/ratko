@@ -101,6 +101,7 @@ class CoreMod(loader.Module):
                     else "☃️ <b>ratko userbot</b>"
                 ),
                 *version.__version__,
+                utils.get_commit_url(),
             ),
             file="https://raw.githubusercontent.com/unsidogandon/ratko/main/banner.jpg",
             reply_to=getattr(message, "reply_to_msg_id", None),

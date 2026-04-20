@@ -12,7 +12,6 @@
 
 import git
 import time
-import git
 import contextlib
 import random
 import psutil

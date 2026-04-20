@@ -6,6 +6,8 @@ import logging
 import os
 import random
 import string
+import gzip
+import shutil
 from datetime import datetime as dt
 
 from herokutl.tl.types import DocumentAttributeVideo, Message
@@ -404,14 +406,10 @@ class HShakalMod(loader.Module):
                     returncode, stdout, stderr = await self._run_ffmpeg(alt_up_cmd, timeout=60)
 
                     if returncode != 0:
-                        import shutil
-
                         shutil.copy(temp_small, output_file)
 
             if not os.path.exists(output_file) or os.path.getsize(output_file) == 0:
                 if os.path.exists(temp_small) and os.path.getsize(temp_small) > 0:
-                    import shutil
-
                     shutil.copy(temp_small, output_file)
                 else:
                     await utils.answer(msg, self.strings("photo_error"))
@@ -647,9 +645,6 @@ class HShakalMod(loader.Module):
                 return
 
             msg = await utils.answer(msg, self.strings("processing_sticker").format(level))
-
-            import gzip
-            import shutil
 
             try:
                 with gzip.open(input_file, "rb") as f_in:
