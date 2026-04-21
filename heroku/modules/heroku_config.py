@@ -33,10 +33,10 @@ NUM_ROWS = 5
 
 
 @loader.tds
-class RatkoConfigMod(loader.Module):
+class HerokuConfigMod(loader.Module):
     """Interactive configurator for ratko userbot"""
 
-    strings = {"name": "RatkoConfig"}
+    strings = {"name": "HerokuConfig"}
 
     def __init__(self):
         self.config = loader.ModuleConfig(

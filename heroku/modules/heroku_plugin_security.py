@@ -17,10 +17,10 @@ from .. import loader, utils
 
 
 @loader.tds
-class RatkoPluginSecurity(loader.Module):
+class HerokuPluginSecurity(loader.Module):
     """Manage external module security overrides"""
 
-    strings = {"name": "RatkoPluginSecurity"}
+    strings = {"name": "HerokuPluginSecurity"}
 
     async def client_ready(self):
         self._internalized = self.pointer("internalized", [])

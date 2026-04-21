@@ -41,10 +41,10 @@ ALL_INVOKES = [
 
 
 @loader.tds
-class RatkoSettingsMod(loader.Module):
+class HerokuSettingsMod(loader.Module):
     """Advanced settings for ratko userbot"""
 
-    strings = {"name": "RatkoSettings"}
+    strings = {"name": "HerokuSettings"}
 
     def get_watchers(self) -> tuple:
         return [

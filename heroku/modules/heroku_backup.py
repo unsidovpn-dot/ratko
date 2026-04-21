@@ -34,10 +34,10 @@ logger = logging.getLogger(__name__)
 
 
 @loader.tds
-class RatkoBackupMod(loader.Module):
+class HerokuBackupMod(loader.Module):
     """Handles database and modules backups"""
 
-    strings = {"name": "RatkoBackup"}
+    strings = {"name": "HerokuBackup"}
 
     async def client_ready(self):
         self._content_channel_id = await utils.wait_for_content_channel(self._db)

@@ -72,10 +72,10 @@ LEGACY_INFO_MARKERS = (
 
 
 @loader.tds
-class RatkoInfoMod(loader.Module):
+class HerokuInfoMod(loader.Module):
     """Show userbot info"""
 
-    strings = {"name": "RatkoInfo"}
+    strings = {"name": "HerokuInfo"}
 
     def __init__(self):
         self.config = loader.ModuleConfig(

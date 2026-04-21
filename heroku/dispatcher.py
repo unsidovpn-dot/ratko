@@ -135,7 +135,7 @@ class CommandDispatcher:
     @staticmethod
     def _patch_message_emoji_methods(message: Message) -> Message:
         if not isinstance(message, Message) or getattr(
-            message, "_ratko_exteragram_wrapped", False
+            message, "_heroku_exteragram_wrapped", False
         ):
             return message
 
@@ -166,7 +166,7 @@ class CommandDispatcher:
         with contextlib.suppress(Exception):
             message.reply = _wrap(message.reply)
 
-        message._ratko_exteragram_wrapped = True
+        message._heroku_exteragram_wrapped = True
         return message
 
     async def _handle_ratelimit(self, message: Message, func: callable) -> bool:

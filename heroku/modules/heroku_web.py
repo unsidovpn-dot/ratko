@@ -40,10 +40,10 @@ logger = logging.getLogger(__name__)
 
 
 @loader.tds
-class RatkoWebMod(loader.Module):
+class HerokuWebMod(loader.Module):
     """Web/Inline mode add account"""
 
-    strings = {"name": "RatkoWeb"}
+    strings = {"name": "HerokuWeb"}
 
     @loader.command()
     async def weburl(self, message: Message, force: bool = False):

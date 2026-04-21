@@ -691,7 +691,7 @@ class Heroku:
 
         try:
             db = client.heroku_db
-            existing = db.get("ratko.inline", "custom_bot", False)
+            existing = db.get("heroku.inline", "custom_bot", False)
         except Exception:
             existing = False
 
@@ -717,7 +717,7 @@ class Heroku:
                     continue
                 try:
                     if await self._check_bot(client, bot):
-                        db.set("ratko.inline", "custom_bot", bot)
+                        db.set("heroku.inline", "custom_bot", bot)
                         print("Bot username saved!")
                         break
                     else:
@@ -913,7 +913,7 @@ class Heroku:
         while bot := self._prompt_input("Custom bot username (optional): "):
             try:
                 if await self._check_bot(client, bot):
-                    db.set("ratko.inline", "custom_bot", bot)
+                    db.set("heroku.inline", "custom_bot", bot)
                     print(self._reg_color("Bot username saved!", "92"))
                     break
                 else:
@@ -1233,7 +1233,7 @@ class Heroku:
                     os.environ["HEROKU_NO_GIT"] = "1"
                     build = "unknown"
                     upd = "Git unavailable"
-            pref = client.heroku_db.get("ratko.main", "command_prefix", None)
+            pref = client.heroku_db.get("heroku.main", "command_prefix", None)
 
             logo = build_startup_logo(
                 build,
