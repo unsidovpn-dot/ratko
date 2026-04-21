@@ -317,18 +317,10 @@ class TerminalMod(loader.Module):
         r":\(\)\s*\{\s*:\|:&\s*\}\s*;\s*:",
         r"cat\s+.*\/dev\/urandom\s+>\s+\/dev\/[hsv]d[a-z]",
         r"ln\s+.*-s\s+\/\s+\/dev\/null",
-        r"echo\s+[\"']?[A-Za-z0-9+/=]{20,}[\"']?\s*\|\s*base64\s+-d\s*\|\s*(sh|bash|zsh)",
-        r"base64\s+-d\s*\|\s*(sh|bash|zsh|dash|ksh)",
-        r"echo\s+.+\|\s*base64\s+--decode\s*\|\s*(sh|bash|zsh|dash|ksh)",
-        r"curl\s+.*\|\s*(sh|bash|zsh|dash|ksh)",
-        r"wget\s+.*-O\s*-\s*\|\s*(sh|bash|zsh|dash|ksh)",
     ]
 
     def _is_dangerous(self, cmd: str) -> bool:
         """Return True if the command matches any banned pattern."""
-        if not getattr(self, "config", None) or not self.config.get("commands_protection", True):
-            return False
-            
         for pattern in self.DANGEROUS_COMMANDS:
             if re.search(pattern, cmd, re.IGNORECASE):
                 return True
@@ -342,22 +334,12 @@ class TerminalMod(loader.Module):
                 lambda: self.strings("fw_protect"),
                 validator=loader.validators.Integer(minimum=0),
             ),
-            loader.ConfigValue(
-                "commands_protection",
-                True,
-                lambda: "Enable/Disable dangerous commands protection (rm -rf, etc)",
-                validator=loader.validators.Boolean(),
-            ),
         )
         self.activecmds = {}
 
     @loader.command()
     async def terminalcmd(self, message):
         user_command = utils.get_args_raw(message)
-        reply = await message.get_reply_message()
-
-        if not user_command and reply and reply.text:
-            user_command = reply.message
 
         if self._is_dangerous(user_command):
             await utils.answer(
