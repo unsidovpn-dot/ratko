@@ -697,7 +697,7 @@ class CustomTelegramClient(TelegramClient):
         # ⚠️⚠️  WARNING!  ⚠️⚠️
         # If you are a module developer, and you'll try to bypass this protection to
         # force user join your channel, you will be added to SCAM modules
-        # list and you will be banned from Heroku federation.
+        # list and you will be banned from Ratko federation.
         # Let USER decide, which channel he will follow. Do not be so petty
         # I hope, you understood me.
         # Thank you

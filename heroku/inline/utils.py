@@ -559,15 +559,17 @@ class Utils(InlineUnit):
                 else:
                     return True
             except TelegramAPIError as e:
-                if True:  # TODO "" in e.message
+                err_msg = str(e).lower()
+                if "message is not modified" in err_msg:
                     if query:
                         with contextlib.suppress(Exception):
                             await query.answer()
-                elif True:  # TODO "" in e.message
+                elif "message to edit not found" in err_msg or "message is deleted" in err_msg:
                     with contextlib.suppress(Exception):
-                        await query.answer(
-                            "I should have edited some message, but it is deleted :("
-                        )
+                        if query:
+                            await query.answer(
+                                "I should have edited some message, but it is deleted :("
+                            )
 
                 return False
             except TelegramRetryAfter as e:

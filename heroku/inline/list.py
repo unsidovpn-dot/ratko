@@ -315,7 +315,7 @@ class List(InlineUnit):
                         [
                             InlineQueryResultArticle(
                                 id=utils.rand(20),
-                                title="Heroku",
+                                title="Ratko",
                                 input_message_content=InputTextMessageContent(
                                     message_text=self.sanitise_text(unit["strings"][0]),
                                     parse_mode="HTML",

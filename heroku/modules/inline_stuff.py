@@ -131,7 +131,7 @@ class InlineStuff(loader.Module):
                             if self._client.heroku_me.premium
                             else "🪐"
                         ),
-                        utils.get_platform_emoji() if self._client else "Heroku",
+                        utils.get_platform_emoji() if self._client else "Ratko",
                     ),
                     reply_markup=self.inline.generate_markup(
                         markup_obj=[

@@ -4,36 +4,36 @@
   <p>Advanced ratko userbot with enhanced security and modern features</p>
   
   <p>
-    <a href="https://www.codacy.com/gh/coddrago/Heroku/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=coddrago/Heroku&amp;utm_campaign=Badge_Grade">
+    <a href="https://www.codacy.com/gh/unsidogandon/ratko/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=unsidogandon/ratko&amp;utm_campaign=Badge_Grade">
       <img src="https://app.codacy.com/project/badge/Grade/97e3ea868f9344a5aa6e4d874f83db14" alt="Codacy Grade">
     </a>
     <a href="#">
-      <img src="https://img.shields.io/github/languages/code-size/coddrago/Heroku" alt="Code Size">
+      <img src="https://img.shields.io/github/languages/code-size/unsidogandon/ratko" alt="Code Size">
     </a>
     <a href="#">
-      <img src="https://img.shields.io/github/issues-raw/coddrago/Heroku" alt="Open Issues">
+      <img src="https://img.shields.io/github/issues-raw/unsidogandon/ratko" alt="Open Issues">
     </a>
     <a href="#">
-      <img src="https://img.shields.io/github/license/coddrago/Heroku" alt="License">
+      <img src="https://img.shields.io/github/license/unsidogandon/ratko" alt="License">
     </a>
     <a href="#">
-      <img src="https://img.shields.io/github/commit-activity/m/coddrago/Heroku" alt="Commit Activity">
+      <img src="https://img.shields.io/github/commit-activity/m/unsidogandon/ratko" alt="Commit Activity">
     </a>
     <br>
     <a href="#">
-      <img src="https://img.shields.io/github/forks/coddrago/Heroku?style=flat" alt="Forks">
+      <img src="https://img.shields.io/github/forks/unsidogandon/ratko?style=flat" alt="Forks">
     </a>
     <a href="#">
-      <img src="https://img.shields.io/github/stars/coddrago/Heroku" alt="Stars">
+      <img src="https://img.shields.io/github/stars/unsidogandon/ratko" alt="Stars">
     </a>
     <a href="https://github.com/psf/black">
       <img src="https://img.shields.io/badge/code%20style-black-000000.svg" alt="Code Style: Black">
     </a>
     <br>
-    <a href="https://github.com/coddrago/Heroku/blob/master/README.md">
+    <a href="https://github.com/unsidogandon/ratko/blob/master/README.md">
       <img src="https://img.shields.io/badge/lang-en-red.svg" alt="En">
     </a>
-    <a href="https://github.com/coddrago/Heroku/blob/master/README_RU.md">
+    <a href="https://github.com/unsidogandon/ratko/blob/master/README_RU.md">
       <img src="https://img.shields.io/badge/lang-ru-green.svg" alt="Ru">
     </a>
   </p>
@@ -68,7 +68,7 @@
   ```bash
   sudo apt update && sudo apt install git python3 -y && \
   git clone https://github.com/unsidogandon/ratko && \
-  cd Heroku && \
+  cd ratko && \
   python3 -m venv .venv && \
   source .venv/bin/activate && \
   pip install -r requirements.txt && \
@@ -82,7 +82,7 @@
   ```bash
   sudo dnf update -y && sudo dnf install git python3 -y && \
   git clone https://github.com/unsidogandon/ratko && \
-  cd Heroku && \
+  cd ratko && \
   python3 -m venv .venv && \
   source .venv/bin/activate && \
   python3 -m pip install -r requirements.txt && \
@@ -96,7 +96,7 @@
 ```bash
 sudo pacman -Syu --noconfirm && sudo pacman -S git python --noconfirm --needed && \
 git clone https://github.com/unsidogandon/ratko && \
-cd Heroku && \
+cd ratko && \
 python3 -m venv .venv && \
 source .venv/bin/activate && \
 python3 -m pip install -r requirements.txt && \
@@ -129,7 +129,7 @@ python3 -m heroku
   
   4. **Enter this command(RMB):**
   ```bash
-  clear && git clone https://github.com/unsidogandon/ratko && cd Heroku && python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt && python3 -m heroku
+  clear && git clone https://github.com/unsidogandon/ratko && cd ratko && python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt && python3 -m heroku
   ```
   > **🔗How to get API_ID and API_HASH?:** [Video](https://youtu.be/DcqDA249Lhg?t=24)
   
@@ -144,7 +144,7 @@ python3 -m heroku
   4. <b>After successful installation, a terminal will open in front of you, write there:</b>
     
   ```bash
-  sudo apt update && sudo apt upgrade -y && sudo apt install python3 git python3-pip -y && git clone https://github.com/unsidogandon/ratko && cd Heroku && python3 -m venv .venv && source .venv/bin/activate && sudo pip install -r requirements.txt && python3 -m heroku
+  sudo apt update && sudo apt upgrade -y && sudo apt install python3 git python3-pip -y && git clone https://github.com/unsidogandon/ratko && cd ratko && python3 -m venv .venv && source .venv/bin/activate && sudo pip install -r requirements.txt && python3 -m heroku
   ```
 
 5. <b>At the end of the installation, a link will appear, follow it and enter your account details to log in.</b>
@@ -157,7 +157,7 @@ python3 -m heroku
   
   1. Go to [@hikkahost_bot](https://.me/hikkahost_bot)
   2. Press "Install"
-  3. Choose "🪐 Heroku"
+  3. Choose "🪐 Ratko"
   And continue installation.
   > **After that, you will receive a link, open it and login in your account.**
 
@@ -180,7 +180,7 @@ To install, just go to [@lavhostbot](https://t.me/lavhostbot) and follow these s
     
   1. Go to [@jamhostbot](https://t.me/jamhostbot) and write the command <code>/pay</code>
   2. Pay for the subscription on the website
-  3. After payment, write the command <code>/install</code> to the bot, select " <b>🪐 Heroku</b> " in the list of userbots and select the desired server
+  3. After payment, write the command <code>/install</code> to the bot, select " <b>🪐 Ratko</b> " in the list of userbots and select the desired server
   4. Log in using the link provided by the bot
 </details>
 You will have to download https://raw.githubusercontent.com/unsidogandon/ratko/refs/heads/main/SwitchToRatko.py
@@ -226,14 +226,14 @@ You will have to download https://raw.githubusercontent.com/unsidogandon/ratko/r
 
 | Type | Link |
 |------|------|
-| **User Documentation** | [heroku-ub.xyz](https://heroku-ub.xyz/) |
-| **Developer Docs** | [dev.heroku-ub.xyz](https://dev.heroku-ub.xyz/) |
+| **User Documentation** | [heroku-ub.xyz](https://github.com/unsidogandon/ratko/) |
+| **Developer Docs** | [dev.heroku-ub.xyz](https://github.com/unsidogandon/ratko/) |
 
 ---
 
 ## 💬 Support
 
-[![Telegram Support](https://img.shields.io/badge/Telegram-Support_Group-2594cb?logo=telegram)](https://t.me/heroku_talks)
+[![Telegram Support](https://img.shields.io/badge/Telegram-Support_Group-2594cb?logo=telegram)](https://t.me/ratko_talks)
 There is no official support at all.
 ---
 

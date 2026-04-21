@@ -73,11 +73,22 @@ class RatkoBackupMod(loader.Module):
 
     async def _get_reqs(self) -> bytes:
 
-        proc = await asyncio.create_subprocess_exec(
-            sys.executable, "-m", "pip", "freeze", stdout=asyncio.subprocess.PIPE
+        # Try to avoid BlockingIOError by repeating the call
+        for _ in range(5):
+            try:
+                proc = await asyncio.create_subprocess_exec(
+                    sys.executable, "-m", "pip", "freeze", stdout=asyncio.subprocess.PIPE
+                )
+                stdout, _ = await proc.communicate()
+                return stdout
+            except BlockingIOError:
+                await asyncio.sleep(1)
+        
+        # fallback to sync execution
+        import subprocess
+        return await utils.run_sync(
+            lambda: subprocess.run([sys.executable, "-m", "pip", "freeze"], capture_output=True).stdout
         )
-        stdout, _ = await proc.communicate()
-        return stdout
 
     async def _install_reqs(self, reqs: bytes):
 
@@ -85,17 +96,29 @@ class RatkoBackupMod(loader.Module):
         with open(temp_file, "wb") as f:
             f.write(reqs)
         try:
-            proc = await asyncio.create_subprocess_exec(
-                sys.executable,
-                "-m",
-                "pip",
-                "install",
-                "-r",
-                temp_file,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
-            )
-            await proc.wait()
+            for _ in range(5):
+                try:
+                    proc = await asyncio.create_subprocess_exec(
+                        sys.executable,
+                        "-m",
+                        "pip",
+                        "install",
+                        "-r",
+                        temp_file,
+                        stdout=asyncio.subprocess.PIPE,
+                        stderr=asyncio.subprocess.PIPE,
+                    )
+                    await proc.wait()
+                    break
+                except BlockingIOError:
+                    await asyncio.sleep(1)
+            else:
+                import subprocess
+                await utils.run_sync(
+                    subprocess.run,
+                    [sys.executable, "-m", "pip", "install", "-r", temp_file],
+                    capture_output=True
+                )
         finally:
             if os.path.exists(temp_file):
                 os.remove(temp_file)

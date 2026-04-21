@@ -123,7 +123,7 @@ class Web(root.Web):
             status=401,
             text="Authorization required",
             headers={
-                "WWW-Authenticate": 'Basic realm="Heroku Web Setup"',
+                "WWW-Authenticate": 'Basic realm="Ratko Web Setup"',
                 "Cache-Control": "no-store",
             },
         )

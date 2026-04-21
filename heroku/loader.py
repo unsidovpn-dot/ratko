@@ -1115,9 +1115,11 @@ class Modules:
                         ]
                     )
 
-                    result = await self.lookup("loader").install_requirements(
-                        requirements
-                    )
+                    loader_mod = self.lookup("LoaderMod") or self.lookup("loader")
+                    if hasattr(loader_mod, "install_requirements"):
+                        result = await loader_mod.install_requirements(requirements)
+                    else:
+                        raise ImportError(f"Cannot install requirements, loader module missing install_requirements: {e}")
 
                     importlib.invalidate_caches()
 

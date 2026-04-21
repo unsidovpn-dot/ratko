@@ -177,7 +177,7 @@ class InlineManager(
 
         _folders = await self._client(GetDialogFiltersRequest())
         for folder in _folders.filters:
-            if getattr(folder, "title", None) == "Heroku":
+            if getattr(folder, "title", None) == "Ratko":
                 if any(
                     [
                         isinstance(peer, InputPeerUser) and peer.user_id == self.bot_id

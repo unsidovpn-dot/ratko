@@ -166,7 +166,7 @@ class RemoteStorage:
                 url,
                 auth=(tuple(auth.split(":", 1)) if auth else None),
                 headers={
-                    "User-Agent": "Heroku Userbot",
+                    "User-Agent": "Ratko Userbot",
                     "X-Heroku-Version": ".".join(map(str, __version__)),
                     "X-Heroku-Commit-SHA": commit_sha,
                     "X-Heroku-User": str(self._client.tg_id),

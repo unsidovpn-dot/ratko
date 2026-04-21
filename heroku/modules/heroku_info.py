@@ -63,9 +63,9 @@ DEFAULT_INFO_MESSAGE = (
     "проц: {cpu}</blockquote>"
 )
 LEGACY_INFO_MARKERS = (
-    "Heroku",
-    "Heroku Userbot",
-    "Heroku supports",
+    "Ratko",
+    "Ratko Userbot",
+    "Ratko supports",
     "Friendly-Telegram",
     "GeekTG",
 )

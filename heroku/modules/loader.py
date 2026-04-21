@@ -530,22 +530,34 @@ class LoaderMod(loader.Module):
         )
         need_user_flag = loader.USER_INSTALL and not is_venv
 
-        pip = await asyncio.create_subprocess_exec(
-            sys.executable,
-            "-m",
-            "pip",
-            "install",
-            "--upgrade",
-            "-q",
-            "--disable-pip-version-check",
-            "--no-warn-script-location",
-            *["--user"] if need_user_flag else [],
-            *requirements,
-        )
+        for _ in range(5):
+            try:
+                pip = await asyncio.create_subprocess_exec(
+                    sys.executable,
+                    "-m",
+                    "pip",
+                    "install",
+                    "--upgrade",
+                    "-q",
+                    "--disable-pip-version-check",
+                    "--no-warn-script-location",
+                    *["--user"] if need_user_flag else [],
+                    *requirements,
+                )
+                rc = await pip.wait()
+                return rc == 0
+            except BlockingIOError:
+                await asyncio.sleep(1)
 
-        rc = await pip.wait()
-
-        if rc != 0:
+        import subprocess
+        cmd = [sys.executable, "-m", "pip", "install", "--upgrade", "-q", "--disable-pip-version-check", "--no-warn-script-location"]
+        if need_user_flag:
+            cmd.append("--user")
+        cmd.extend(requirements)
+        try:
+            rc = await utils.run_sync(subprocess.run, cmd, capture_output=True)
+            return rc.returncode == 0
+        except Exception:
             return False
 
         return True

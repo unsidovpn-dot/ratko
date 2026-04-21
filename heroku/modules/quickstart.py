@@ -31,7 +31,7 @@ class Quickstart(loader.Module):
             self.strings("base").format(
                 utils.get_platform_emoji()
                 if self.client.heroku_me.premium is True
-                else "Heroku"
+                else "Ratko"
             )
             + (
                 "\n" + (self.strings("lavhost") if "LAVHOST" in os.environ else "")
@@ -151,7 +151,7 @@ class Quickstart(loader.Module):
 
         await self.request_join(
             "heroku_talks",
-            "Heroku help is only available in this chat. By agreeing to join the chat, you agree to the Heroku federation rules and if you violate them, you will be permanently banned.",
+            "Ratko help is only available in this chat. By agreeing to join the chat, you agree to the Ratko federation rules and if you violate them, you will be permanently banned.",
         )
 
         self.mark = lambda: (

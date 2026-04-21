@@ -1,12 +1,12 @@
 # Heroku Changelog
-## 🪐 Heroku 2.1.0
+## 🪐 Ratko 2.1.0
 - fix security check in help
 - fix blockquote in config and info
 - add pip packages backup to backupall
 - fix placeholders in help
 - fix placeholders caption in UwU language
 
-## 🪐 Heroku 2.0.0
+## 🪐 Ratko 2.0.0
 - rework utils
 - add prefix to start message
 - fix create bot
@@ -122,7 +122,7 @@
 - fix restore button invoke
 - improve logging logic
 
-## 🪐 Heroku 1.7.2
+## 🪐 Ratko 1.7.2
 - added autoupdate
 - updated heroku-tl to 1.7.2
 - fix folder bug
@@ -158,7 +158,7 @@
 - added quote for list commands in help
 - fix banner in .presets command
 
-## 🪐 Heroku 1.7.1
+## 🪐 Ratko 1.7.1
 - fixed bug with web 
 - fixed bug with executor
 - fixed bug with presets command
@@ -174,7 +174,7 @@
 - fixed error with "method not mounted"
 - added log "aiogram sleep" to ignore filter
 
-## 🪐 Heroku 1.7.0
+## 🪐 Ratko 1.7.0
 
 - added banner to ping
 - added config for emoji in config (.cfg herokuconfig)
@@ -198,7 +198,7 @@
 - updated to aiogram 3.20.0
 - fix some bugs with buttons in inline
 
-## 🪐 Heroku 1.6.8
+## 🪐 Ratko 1.6.8
 
 - Finally renamed to Heroku and new Emoji
 - many changes and improvements
@@ -262,10 +262,10 @@
 - Update to Hikka-TL 2.0.7
 - Allow double-restart
 - Personal messages scam modules protection
-- https://github.com/coddrago/Heroku/issues/115
-- https://github.com/coddrago/Heroku/issues/114
-- https://github.com/coddrago/Heroku/issues/119
-- https://github.com/coddrago/Heroku/issues/120
+- https://github.com/unsidogandon/ratko/issues/115
+- https://github.com/unsidogandon/ratko/issues/114
+- https://github.com/unsidogandon/ratko/issues/119
+- https://github.com/unsidogandon/ratko/issues/120
 - Other changes
 
 ## 🌑 Heroku 1.6.3
