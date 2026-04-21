@@ -326,6 +326,9 @@ class TerminalMod(loader.Module):
 
     def _is_dangerous(self, cmd: str) -> bool:
         """Return True if the command matches any banned pattern."""
+        if not getattr(self, "config", None) or not self.config.get("commands_protection", True):
+            return False
+            
         for pattern in self.DANGEROUS_COMMANDS:
             if re.search(pattern, cmd, re.IGNORECASE):
                 return True
@@ -338,6 +341,12 @@ class TerminalMod(loader.Module):
                 2,
                 lambda: self.strings("fw_protect"),
                 validator=loader.validators.Integer(minimum=0),
+            ),
+            loader.ConfigValue(
+                "commands_protection",
+                True,
+                lambda: "Enable/Disable dangerous commands protection (rm -rf, etc)",
+                validator=loader.validators.Boolean(),
             ),
         )
         self.activecmds = {}
