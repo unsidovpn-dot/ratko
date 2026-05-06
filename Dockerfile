@@ -49,7 +49,7 @@ WORKDIR /data
 RUN mkdir /data/private
 
 RUN git clone https://github.com/unsidogandon/ratko /data/ratko
-WORKDIR /data/Heroku
+WORKDIR /data/ratko
 RUN git fetch && git checkout master && git pull
 
 RUN pip install --no-warn-script-location --no-cache-dir -U -r requirements.txt
